@@ -26,9 +26,9 @@ jobs:
           with:
             files: main.pdf
             tag_name: ${{ github.sha }}
-            release_name: Release ${{ github.sha }}
+            name: Abstract release
             body: |
                 New abstract release
-                draft: false
-                prerelease: false
+            draft: true
+            prerelease: false
                 
