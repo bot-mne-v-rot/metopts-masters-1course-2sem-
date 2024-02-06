@@ -1,0 +1,281 @@
+\section{Introduction}
+\label{sec:introduction}
+
+This course tries to answer such questions that occur while doing some practical tasks in machine learning such as:
+\begin{itemize}
+  \item Which optimization routine to use in a given situation?
+  \item How do I convert one optimization problem to another?
+  \item How do I solve a given optimization problem?
+\end{itemize}
+
+\begin{definition} Let's start with a simple \textit{Unconstrained optimization problem}:
+  $$
+  f(x) \to \min_{x}, x \in \R^n, f \in \mathcal{C}^1
+  $$
+\end{definition}
+
+It's quite clear on specific examples, that when introducing an optimization technique, we cannot garantee to achieve the global minimum/maximum. We can only hope to find a local minimum/maximum. 
+
+$$
+\nabla f(x) = \begin{bmatrix}
+  \frac{\partial f}{\partial x_1} \\
+  \vdots \\
+  \frac{\partial f}{\partial x_n} 
+\end{bmatrix} \in \R^n
+$$
+
+$$
+\nabla^2 f(x) = \begin{Bmatrix} 
+      \frac{\partial^2 f}{\partial x_i \partial x_j}
+   \end{Bmatrix}^n_{i, j = 1} \in \R^{n \times n} (\in \mathcal{C}^2)
+$$
+
+\begin{theorem} Necessary condition for a local minimum:
+  $f \in \mathcal{C}^1 (\in \mathcal{C}^2), x_0 \in \operatorname{int dom}$  f, $x_0$ --- local minimum $\Longrightarrow \nabla f(x_0) = 0, \nabla^2 f(x_0) \geqslant 0$
+\end{theorem}
+\begin{proof}
+$\exists \varepsilon > 0$ such that $\forall x \in O_\varepsilon (x_0) \qquad f(x) \geqslant f(x_0)$ ($O_\varepsilon$ -- vicinity $\varepsilon$)
+
+$$
+f(x + \alpha d) = f(x) + \nabla f(x)^T d \alpha + \overline{o} (\alpha^2) \geqslant f(x_0)
+$$
+\begin{gather*}
+  \nabla f(x_0)^T d \alpha + \overline{o} (\alpha^2) \geqslant 0 \\
+  \nabla f(x_0)^T d + \overline{o} (\alpha) \geqslant 0 \qquad \mid \alpha \to 0 \\ 
+  \nabla f(x_0)^T d \geqslant 0 \quad \forall d \in \R^n \Longrightarrow \nabla f(x_0) = 0
+\end{gather*}
+
+\end{proof}
+
+\begin{theorem} Sufficient condition for a local minimum:
+  $f \in \mathcal{C}^2, x_0 \in \operatorname{int dom} f, \nabla f(x_0) = 0, \nabla^2 f(x_0) > 0 \Longrightarrow x_0$ --- local minimum
+\end{theorem}
+
+To solve the optimization problem one may use linear regression, defined like so: 
+$$
+Q(w) = \norm{X w - y}^2_2 \to \min_w \Longrightarrow w_{opt} = \underbrace{(X^T X)^{-1}}_{D \times D} X^T y
+$$
+
+Why it could be bad? It is hard to store a matrix of D by D size in memory. The complexity wil be $\mathcal{O}(N D^2)$
+
+\subsection{Machine Precision}
+
+Floating points on machines are stored using the mantissa. A technical standard for floating-point arithmetic is the IEEE Standard for Floating-Point Arithmetic, also known as IEEE 754. Let us have a quick overview of the standard. In IEEE basic decimal types, known as floats are also stored using 32 bits. The first bit is a sign bit, the next 8 bits define the exponent $E$ and the rest 23 bits are the mantissa $M$:
+
+\vspace{0.5em}
+\begin{center}
+    \begin{bytefield}[bitheight=\widthof{~Sign~},
+    boxformatting={\centering\small}]{32}
+    \bitheader[endianness=big]{31,23,0} \\
+    \colorbitbox{lightcyan}{1}{\rotatebox{90}{Sign}} &
+    \colorbitbox{lightgreen}{8}{Exponent} &
+    \colorbitbox{lightred}{23}{Mantissa}
+    \end{bytefield}
+\end{center}
+\vspace{0.5em}
+
+The value of the actual number that it represents is calculated as follows:
+\[ (-1)^{\text{Sign}} \cdot \left(1 + \frac{M}{2^{23}}\right) \cdot 2^{E - 127} \]
+
+So, whats the point here. If we look at how dense is the exponential scale, we see that the bigger are the numbers, the higher is the error, i.e. the distance betweeen 2 ($\sim$neighbouring) given numbers on the exponential scale grows when these numbers get bigger. 
+
+$$
+\abs{\frac{f(x) - x}{x}} \leqslant \varepsilon_m
+$$
+
+Here $\varepsilon_m$ is known as machine precision. 
+
+Some popular values: 
+
+\begin{itemize}
+  \item $\varepsilon_m \approx 10^{-7}$ for single precision if using 32 bits and $\varepsilon_m \approx 10^{-3}$ --- 16 bits
+  \item $\varepsilon_m \approx 10^{-16}$ for double precision --- 64 bits
+\end{itemize}
+
+Say you have an oracle that that takes a point as input and computes the value of function f at this point and its gradient at this point. That's our optimization routine. How can we do a sanity check of our oracle optimizer? 
+
+We can check it this way: 
+\begin{gather*}
+  f(x + \varepsilon d) + f(x) + \nabla f(x)^T d \varepsilon + \underline{O} (\varepsilon^2) \\ 
+  \nabla f(x)^T d = \frac{f(x + \varepsilon d) - f(x)}{\varepsilon} + \underline{O} (\varepsilon) \\ 
+  d = e_i \qquad \frac{\partial f}{\partial x_i} \approx \frac{f(x + \varepsilon e_i) - f(x)}{\varepsilon}
+\end{gather*}
+
+\subsection{Convergence rate}
+One other important paramter of an optimization algorithm, used, for example for evaluating the performance of the algorithm, is the convergence rate. 
+
+Yet, sometimes, different algorithms have different convergence rates for different functions, so it is important to evaluate algorithms for a class of functions, not just for a single function.
+
+Say we have a sequence of points $\{x_k\}$, and we want to measure the distance between the current point and the optimal point.
+\begin{align*}
+  r_k &= f(x_k) - f_{opt} \\ 
+  &= \norm{x_k - x_{opt}} \\ 
+  &= \norm{\nabla f(x_k)} \\
+\end{align*}
+
+\begin{definition}
+  $\{r_k\}$ has linear convergence rate if $\exists X, q \in (0, 1), k_0$ such that $\forall k \geqslant k_0 \quad r_{k} \leqslant C q^k$
+\end{definition}
+
+For a linear convergent algorithm, each step requires a constant number of iterations.
+So the quality of the algorithm really depends on this constant. Whether it is big or small.
+
+\begin{align*}
+  r_k &= C q^k \\ 
+  \log r_k &= \log C + k \log q \\
+\end{align*}
+
+\begin{definition}
+  $\{r_k\}$ has sublinear convergence rate if it doesn't have a linear convergence rate $\forall q \in (0, 1)$. 
+\end{definition}
+
+\begin{definition}
+  $\{r_k\}$ has superlinear convergence rate if it has a linear convergence rate $\forall q \in (0, 1)$ 
+\end{definition}
+
+\notice \; An example of a superlinear convergent algorithm is the Newton's method.
+
+\notice \; For a superlinear convergent algorithm, with each iteration we get a higher amount of bits, that we have already got from all previous iterations. 
+
+\begin{theorem} (Test of ratios) Lets consider a sequence $\{r_k\}$, $r_k > 0$ and: 
+\begin{gather*}
+  \alpha := \overline{\lim_{k \to \infty}} \frac{r_{k+1}}{r_k} \qquad \beta := \underline{\lim_{k \to \infty}} \frac{r_{k+1}}{r_k} 
+\end{gather*}
+Then: 
+\begin{enumerate}
+  \item If $\alpha < 1$, then $\{r_k\}$ has a linear convergence rate
+  \item If $\beta \geqslant 1$, then $\{r_k\}$ has a sublinear convergence rate
+  \item If $\beta < 1, \alpha > 1$, we cannot say anything
+\end{enumerate}
+\end{theorem}
+
+Let's consider an example. A sequence is $\{r_k\} = \frac{1}{k}$. Then: 
+\begin{gather*}
+  \frac{r_{k+1}}{r_k} = \frac{k}{k+1} \underbrace{\longrightarrow}_{k \to \infty} 1 \Longrightarrow \text{sublinear} 
+\end{gather*}
+
+\begin{theorem} (Criterion of roots) Lets consider a sequence $\{r_k\} \underbrace{\longrightarrow}_{k \to \infty} 0$, $r_k \geqslant 0$ and:
+\begin{gather*}
+  \alpha := \overline{\lim_{k \to \infty}} \sqrt[k]{r_k}
+\end{gather*}
+Then: 
+\begin{enumerate}
+  \item If $\alpha < 1$, then $\{r_k\}$ has a linear convergence rate
+  \item If $\alpha = 0$, then $\{r_k\}$ has a superlinear convergence rate
+  \item If $\alpha = 1$, then $\{r_k\}$ has a sublinear convergence rate
+\end{enumerate}
+\end{theorem}
+
+\begin{definition} \textit{Line search} We have $f(x) \to \min_{x}, x \in \R^n, f \in \mathcal{C}^1$:
+\begin{gather*}
+  x_{k+1} = x_k + \alpha_k d_k, d_k \in \R^n, \alpha_k \in \R_+ \\ 
+  \text{Requirement for } d_k: \nabla f(x_k)^T d_k < 0
+\end{gather*}
+So: 
+$$
+  \arg \min \underbrace{f(x_k + \alpha d_k)}_{\varphi(\alpha)} = \alpha_k
+$$
+\end{definition}
+
+There are several conditions for searching for a local minimum of $\varphi(\alpha)$. These conditions give us ranges of $\alpha$ which we will consider while searching for the minimum afterwards.
+
+One of them is the Armijo condition.
+\begin{definition} \textit{Armijo condition}:
+\begin{gather*}
+  \varphi(\alpha) \leqslant \varphi(0) + c_1 \alpha \varphi'(0) \\
+  c_1 \in (0, 1)
+\end{gather*}
+\end{definition}
+
+Also there are weak and strong Wolfe conditions.
+\begin{definition} \textit{Weak Wolfe condition}:
+\begin{gather*}
+  \varphi(\alpha) \geqslant c_2 \varphi'(0) \\
+  c_2 \in (c_1, 1)
+\end{gather*}
+\end{definition}
+
+\begin{definition} \textit{Strong Wolfe condition}:
+\begin{gather*}
+  \abs{\varphi'(\alpha)} \leqslant c_2 \abs{\varphi'(0)} \\
+  c_2 \in (c_1, 1)
+\end{gather*}
+\end{definition}
+
+\begin{theorem}
+  If we have $\varphi \in \mathcal{C}^1, \varphi'(0) < 0, \varphi(\alpha) > -\infty \quad \forall \alpha \in [0, \alpha_0]$ and $0 < c_1 < c_2 < 1$, then $\alpha_k$ satisfies both the Armijo and the weak/strong Wolfe conditions.
+\end{theorem}
+\begin{proof}
+  Let's consider the Armijo condition. 
+  \begin{gather*}
+    \varphi(\alpha) = \varphi(0) + \alpha \varphi'(0) + \overline{o} (\alpha) \leqslant \varphi(0) + c_1 \alpha \varphi'(0) \\
+    \overline{o}(\alpha) + \leqslant \alpha \varphi'(0) (c_1 - 1) \\
+  \end{gather*}
+
+  \begin{gather*}
+    \psi(\alpha) = \varphi(0) + c_1 \alpha \varphi'(0) - \varphi(\alpha) \\
+    \psi(0) = 0, \psi(\alpha_{\max}) = 0, \psi(\alpha) > 0 \quad \forall \alpha \in (0, \alpha_{\max}) \\
+    \exists \hat\alpha \in (0, \alpha_{\max}): \psi'(\hat\alpha) = 0 \\
+    \psi'(\alpha) = c_1 \varphi'(0) - \varphi'(\alpha) = 0 \\
+    \varphi'(\alpha) = c_1 \varphi'(0) \geqslant c_2 \varphi'(0) \qquad \forall c_2 \geqslant c_1
+  \end{gather*}
+\end{proof}
+
+And now let's discuss how do we find the particular values of $\alpha_k$ that satisfy the conditions. There are several methods for that.
+
+\begin{definition} \textit{Backtracking algorithm}:
+\begin{itemize}
+  \item $\alpha = \alpha_{start}$
+  \item Repeat: 
+  \begin{itemize}
+    \item if $\varphi(\alpha) \leqslant \varphi(0) + c_1 \alpha \varphi'(0)$, then return $\alpha$
+    \item else $\alpha = \beta \alpha, \beta \in (0, 1)$
+  \end{itemize}
+\end{itemize}
+\end{definition}
+
+\notice \; Say you use line\_search from scipy. Sometimes it can return you None. What do you do? You can use backtracking algorithm as it never fails completely.
+
+What are the stopping conditions for the expansion procedure? 
+
+\begin{itemize}
+  \item $\varphi(\alpha) > \varphi(0) + c_1 \alpha \varphi'(0)$ 
+  \item $\varphi'(\alpha) > 0$
+  \item $\varphi(\alpha_{prev}) < \varphi(\alpha), \qquad c_1 < c_2, \varphi'(\alpha_{prev}) > c_1 \varphi'(0)$
+\end{itemize}
+
+We do an expansion procedure and then the zooming procedure.
+
+\begin{definition} \textit{Expansion procedure}:
+\begin{itemize}
+  \item $\alpha_0 = 0, \alpha_1 \in (0, \alpha_{max})$
+  \item Repeat: 
+  \begin{itemize}
+    \item Compute $\varphi(\alpha_i)$
+    \item If $\varphi(\alpha_i) > \varphi(0) + c_1 \alpha_i \varphi'(0)$ or $\varphi(\alpha_i) > \varphi(\alpha_{i-1})$, then $\operatorname{zoom}(\alpha_{i-1}, \alpha_i)$
+    \item Compute $\varphi'(\alpha_i)$
+    \item If $\abs{\varphi'(\alpha_i)} \leqslant c_2 \abs{\varphi'(0)}$, then $\alpha_k = \alpha_i$ and stop 
+    \item If $\varphi'(\alpha_i) \geqslant 0$, then $\operatorname{zoom}(\alpha_{i-1}, \alpha_i)$
+    \item Pick $\alpha_{i+1} \in (\alpha_i, \alpha_{max})$
+    \item $i++$
+  \end{itemize}
+\end{itemize}
+\end{definition}
+
+On the zooming procedure we are doing aka binary search and reducing the interval of the search.
+
+\begin{definition} \textit{Zoom procedure}: 
+Depends on two arguments: $\alpha_{low}, \alpha_{high}$. Requirements for the arguments: $\alpha_{low}$ should satisfy the Armijo condition ans has the least function value we have seen so far. Also $\varphi'(\alpha_{low})(\alpha_{high} - \alpha_{low}) < 0$.
+\begin{itemize}
+  \item Repeat: 
+  \begin{itemize}
+    \item Choose $\alpha \in (\alpha_{low}, \alpha_{high})$
+    \item Compute $\varphi(\alpha)$
+    \item If $\varphi(\alpha) > \varphi(0) + c_1 \alpha \varphi'(0)$ or $\varphi(\alpha) > \varphi(\alpha_{low})$, then $\alpha_{high} = \alpha$
+    \item Compute $\varphi'(\alpha)$
+    \item If $\abs{\varphi'(\alpha)} \leqslant c_2 \abs{\varphi'(0)}$, then $\alpha_k = \alpha$ and stop
+    \item If $\varphi'(\alpha) (\alpha_{high} - \alpha_{low}) \geqslant 0$, then $\alpha_{high} = \alpha_{low}$
+    \item $\alpha_{low} = \alpha$
+  \end{itemize}
+\end{itemize}
+\end{definition}
