@@ -24,7 +24,7 @@ jobs:
         - name: Create github release
           uses: softprops/action-gh-release@v1
           with:
-            files: PDF
+            files: OptimizationMethods.pdf
             tag_name: ${{ github.sha }}
             name: Abstract release
             body: |
