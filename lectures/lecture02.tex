@@ -1,0 +1,444 @@
+\section{Gradient Descent Algorithm}
+Before discussing the gradient descent algorithm, we need to discuss a few concepts.
+
+\subsection{Computing the Hessian Matrix}
+One of the ways to determine the convexity of a function is to compute its Hessian matrix. Let's discuss how to compute the Hessian matrix of a function.
+
+Given: 
+\[
+    f : u \to v 
+\]
+If we fix the increment h, then first differential of f is given by:
+\[
+    df(x)[h] : u \to v
+\]
+And once again, if we now fix $h_1$ and $h_2$, then the second differential of f is given by:
+\[
+    d^2f(x)[h_1, h_2] := d(df(x)[h_1])(x)[h_2]
+\]
+
+Now let's say we are only interested in vector functions of form: 
+\[
+    f : \mathbb{R}^n \to \mathbb{R}
+\]
+Then the Hessian matrix of f is given by:
+\[
+    d^2f(x)[h_1, h_2] = h_1^T \nabla^2 f(x) h_2
+\]
+
+\example{1}
+
+\begin{gather*}
+    f(x) = \frac{1}{3} \norm{x}_2^3 = \frac{1}{3} (x^T x)^{3/2} : \mathbb{R}^n \to \mathbb{R} 
+\end{gather*}
+And we want to compute the Hessian matrix of f.
+\begin{gather*}
+    df = (x^T x)^{\frac{1}{2}} x^T dx \\ 
+    d^2f = d x_1^T x (x^T x)^{-\frac{1}{2}} x^T d x_2 + dx_1^T (x^T x)^{\frac{1}{2}} dx_2 \\ 
+    \nabla^2 f = \frac{1}{\norm{x}_2} x x^T + \norm{x}_2 I_n
+\end{gather*}
+
+Now to determine whether the function is convex or not, we can use the following: 
+\[
+    f \text { --- convex} \Longleftrightarrow d^2 f(x)[dx, dx] \geqslant 0 \quad \forall x, dx
+\]
+
+\subsection{Function classes in Optimization}
+
+\subsubsection{Convex Functions}
+
+\begin{conj}
+    f is convex if $\forall x, y \in \operatorname{dom} f \; \forall \alpha \in (0, 1)$: 
+    \[
+        f(\alpha x + (1 - \alpha) y) \leqslant \alpha f(x) + (1 - \alpha) f(y)
+    \]
+\end{conj}
+
+\notice \; If the inequality is strict, then the function is \textit{strictly convex}.
+
+\notice \; If we additionaly assume that $f \in \mathcal{C}^1$, then: 
+\[
+    f \text { --- convex} \Longleftrightarrow f(y) \geqslant f(x) + \nabla f(x)^T (y - x) \quad \forall x, y
+\]
+As well we can say that if $f \in \mathcal{C}^2$, then:
+\[
+    f \text { --- convex} \Longleftrightarrow \nabla^2 f(x) [dx, dx] \geqslant 0 \quad \forall x, dx
+\]
+
+\subsubsection{Strongly Convex Functions}
+
+\begin{conj}
+    f is strongly convex with parameter $\mu$ if: 
+    \[
+        f(x) - \frac{\mu}{2} \norm{x}_2^2 \text { --- convex} \Longleftrightarrow f(y) \geqslant f(x) + \nabla f(x)^T (y - x) + \frac{\mu}{2} \norm{x - y}_2^2 \qquad \forall x, y
+    \]
+\end{conj}
+
+\example{1} Example of a comvex, but not strongly convex function: $f(x) = x^4$.
+
+\notice \; A strongly convex function with a reletively small parameter $\mu$ is really similar to a strictly convex function.
+
+\subsubsection{Lipschitz functions}
+
+\begin{conj}
+    \[
+        f \in \mathcal{C}_L^{k, m} \Longleftrightarrow \begin{cases}
+            f \in \mathcal{C}^k \\
+            \norm{\nabla^k f(x) - \nabla^m f(y)} \leqslant L \norm{y - x} \quad \forall x, y
+        \end{cases}
+    \]
+\end{conj}
+
+For $k = 1, m = 0$, we get: 
+\begin{align*}
+    f \in \mathcal{C}_L^{1, 0} &\Longleftrightarrow \abs{f(y) - f(x)} \leqslant L \norm{y - x} \quad \forall x, y \\
+    &\Longleftrightarrow f(y) \leqslant f(x) + L \norm{y - x} \quad \forall x, y \\ 
+    &\Longleftrightarrow f(y) \geqslant f(y) - L \norm{y - x} \quad \forall x, y
+\end{align*}
+
+For $k = 1, m = 1$, we get the following:
+\begin{align*}
+    f \in \mathcal{C}_L^{1, 1} &\Longleftrightarrow \norm{\nabla f(y) - \nabla f(x)} \leqslant L \norm{y - x} \quad \forall x, y \\
+    &\Longleftrightarrow f(y) \leqslant f(x) + \nabla f(x)^T (y - x) + \frac{L}{2} \norm{y - x}^2 \quad \forall x, y \\ 
+    &\Longleftrightarrow f(y) \geqslant f(x) + \nabla f(x)^T (y - x) - \frac{L}{2} \norm{y - x}^2 \quad \forall x, y
+\end{align*}
+
+A function cannot decrease faster than a given parabola.
+
+Now we can finally discuss the gradient descent optimization. 
+
+\subsection{Gradient Descent}
+
+We have an iterative algorithm: 
+\[
+    x_{k+1} = x_k + \alpha_k d_k, \quad \nabla f(x_k)^T d_k < 0
+\]
+
+We need to find the best direction $d_k$: 
+\[
+    \begin{cases}
+        \nabla f(x_k)^T d \to \min_{d} \\
+        \norm{d} \leqslant \varepsilon
+    \end{cases} \Longrightarrow d_k = - \varepsilon \frac{\nabla f(x_k)}{\norm{\nabla f(x_k)}}
+\]
+
+And the iterative procedure would be: 
+\[
+    x_{k+1} = x_k - \alpha_k \nabla f(x_k)
+\]
+\begin{enumerate}
+    \item $\alpha_k = \frac{1}{L}, \; f \in \mathcal{C}_L^{1,1}$
+    \item $\alpha_k$ -- Armijo/Wolfe condition
+\end{enumerate}
+
+\subsubsection{Convergence of the Gradient Descent}
+To evaluate the convergence of the gradient descent, we need to fix the class of functions we are working with.
+
+Firstly, let's assume that our function is just Lipschitz with parameters 1, 1. Then: 
+\begin{align*}
+    f(y) &\leqslant f(x) + \nabla f(x)^T (y - x) + \frac{L}{2} \norm{y - x}^2 \\
+    &= f(x) - \alpha \norm{\nabla f(x)}^2 + \frac{\alpha^2 L}{2} \norm{\nabla f(x)}^2 \\
+    &= f(x) - \left(\alpha - \frac{\alpha^2 L}{2}\right) \norm{\nabla f(x)}^2
+\end{align*}
+
+\[
+    \alpha - \frac{\alpha^2 L}{2} \to \max_{\alpha} \Longrightarrow \alpha = \frac{1}{L}
+\]
+
+Meaning that: 
+\[
+    f(y) \leqslant f(x) - \frac{1}{2L} \norm{\nabla f(x)}^2
+\]
+
+\begin{align*}
+    f(x_k) &\leqslant f(x_{k-1}) - \frac{1}{2L} \norm{\nabla f(x_{k-1})}^2 \\ 
+    &\leqslant f(x_{k-2}) - \frac{1}{2L} \norm{\nabla f(x_{k-2})}^2 - \frac{1}{2L} \norm{\nabla f(x_{k-1})}^2 \\
+    &\leqslant \dots \\ 
+    &\leqslant f(x_0) - \frac{1}{2L} \sum_{i=0}^{k-1} \norm{\nabla f(x_i)}^2 \\ 
+    &\leqslant \sum_{i=0}^{k-1} \norm{\nabla f(x_i)}^2 \\ 
+    &\leqslant 2 L \left(f(x_0) - f(x_k)\right) \\ 
+    &\leqslant 2 L \left(f(x_0) - f_{opt}\right)
+\end{align*}
+
+Then for $i \in [0, k - 1]$: 
+\begin{gather*}
+    g_k := \min{\norm{\nabla f(x_i)}}^2 \Longrightarrow \boxed{g_k \leqslant \frac{2 L \left(f(x_0) - f_{opt}\right)}{k}}
+\end{gather*}
+
+\notice \; Exit condition is $g_k \leqslant \varepsilon$. 
+
+We got a sublinear convergence rate. 
+
+\example{1} Let's consider a concrete example: 
+\[
+    f(x, y) = \frac{1}{2} (x^2) - \frac{1}{2} (y^2) \to \min_{x, y}
+\]
+
+Compute gradient: 
+\begin{gather*}
+    \nabla f(x, y) = \begin{bmatrix}
+        x \\ -y
+    \end{bmatrix}
+\end{gather*}
+
+Let's say we take $\begin{bmatrix}
+    x_0 \\ 0
+\end{bmatrix}$ as our starting point, then:
+
+The first point: 
+\begin{gather*}
+    \begin{bmatrix}
+        x_1 \\ y_1
+    \end{bmatrix} = \begin{bmatrix}
+        x_0 \\ 0
+    \end{bmatrix} - \alpha \begin{bmatrix}
+        x_0 \\ 0
+    \end{bmatrix} = \begin{bmatrix}
+        (1 - \alpha) x_0 \\ 0
+    \end{bmatrix}
+\end{gather*}
+Next: 
+\begin{gather*}
+    \begin{bmatrix}
+        x_2 \\ y_2
+    \end{bmatrix} = \begin{bmatrix}
+        (1 - \alpha) x_0 \\ 0
+    \end{bmatrix} - \alpha \begin{bmatrix}
+        (1 - \alpha) x_0 \\ 0
+    \end{bmatrix} = \begin{bmatrix}
+        (1 - \alpha)^2 x_0 \\ 0
+    \end{bmatrix}
+\end{gather*}
+
+And so on. 
+
+Я не успел вдуплить какой вывод мы сделали из примера. Как будто с такой начальной точкой не сошлось, но если взять $y_0$ не 0 а какое-то маленькое число, то сойдется.
+
+Now let's consider the case when $f \in \mathcal{C}_L^{1, 1}$ and $f$ is strongly convex with parameter $\mu$. Then:
+\begin{gather*}
+    f(y) \geqslant \underbrace{f(x) + \nabla f(x)^T (y - x) + \frac{\mu}{2} \norm{y - x}^2}_{h(y)} \qquad \forall y
+\end{gather*}
+
+\begin{align*}
+    f_{opt} = \min_y{f(y)}
+    &\geqslant \min_y{h(y)} \\
+    &= f(x) - \frac{1}{\mu} \norm{\nabla f(x)}^2 + \frac{\mu}{2} \cdot \frac{1}{\mu^2} \norm{\nabla f(x)}^2 \\
+    &= f(x) - \frac{1}{2 \mu} \norm{\nabla f(x)}^2
+\end{align*}
+
+Meaning that:
+\[
+    f(x) - f_{opt} \leqslant \frac{1}{2 \mu} \norm{\nabla f(x)}^2
+\]
+
+Thus: 
+
+\begin{align*}
+    f(x_k) - f_{opt} &\leqslant f(x_{k-1}) - \frac{1}{2L} \norm{\nabla f(x_{k-1})}^2 - f_{opt} \\
+    &\leqslant f(x_{k-1}) - f_{opt} - \frac{1}{2L} 2 \mu \left(f(x_{k-1}) - f_{opt}\right) \\
+    &= \left(1 - \frac{\mu}{L}\right) \left(f(x_{k-1}) - f_{opt}\right) \\
+    &\leqslant \dots \\
+    &\leqslant \left(1 - \frac{\mu}{L}\right)^k \left(f(x_0) - f_{opt}\right)
+\end{align*}
+
+And as we have obtained a geometric series here, we get a linear convergence.
+
+\begin{table}[!h]
+    \centering
+    \begin{tabular}{c c c}
+        \toprule
+        \textbf{Class of functions} & \textbf{Residual} & \textbf{Convergence rate} \\
+        \midrule
+        $f \in \mathcal{C}_L^{1, 1}$ & $\min_{i \in [0, k-1]} \norm{\nabla f(x_i)}^2$ & $\mathcal{O} \left(\frac{1}{k}\right)$ \\
+        \midrule
+        $f \in \mathcal{C}_L^{1, 1}$, $f$ is strongly convex with parameter $\mu$ & $f(x_k) - f_{opt}$ & $\mathcal{O} \left(C^k\right), \; C = 1 - \frac{\mu}{L}$ \\
+        \midrule
+        $f \in \mathcal{C}_L^{1, 1}$, $f$ is convex & $f(x_k) - f_{opt}$ & $\mathcal{O} \left(\frac{1}{k}\right)$ \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\[
+    F(w) = \frac{1}{N} \sum_{i=1}^N \log{\left(1 + e^{-y_i w^T x_i}\right)} + \frac{\lambda}{2} \norm{w}_2^2 \to \min_{w}
+\]
+
+\subsubsection{Important example}
+
+Now let's consider the following problem:
+\[
+    f(x) = \frac{1}{2} x^T A x - x^T b \to \min_{x} \in \mathbb{R}^n
+\]
+While $A$ is a symmetric positive definite matrix.
+
+Ww apply the gradient descent: 
+\begin{gather*}
+    \nabla f(x) = Ax - b = 0 \\ 
+    \nabla^2 f(x) = A
+\end{gather*}
+
+In which class of functions is our function? 
+\begin{itemize}
+    \item f is strongly convex with parameter $\mu = \lambda_{\min}(A)$. 
+    \item $f \in \mathcal{C}_L^{2,1}$ --- f is Lipschitz with parameter $L = \lambda_{\max}(A)$.
+\end{itemize}
+
+\example{1}, ellipses 2 perametric $f$ looks the following: 
+
+\begin{center}
+    \begin{tikzpicture}[thick,yscale=0.8]
+        % Axes
+        \draw[-latex,name path=xaxis] (-1,0) -- (10,0) node[above]{\large $x_1$};
+        \draw[-latex] (0,-2) -- (0,8)node[right]{\large $x_2$};;
+        
+        % Draw ellipses
+        \draw[rotate around={60:(4,4)},red] (4,4) ellipse (2.5cm and 1.6cm);
+        \draw[rotate around={60:(4,4)},blue] (4,4) ellipse (1.75cm and 1.12cm);
+        
+        % % plot tangent line
+        \draw[dashed,name path=Tfunction]  plot[smooth,domain=2:5] (\x, {(0.3*\x + 0.6)});
+
+        % % plot perpendicular line
+        \draw[name path=Kfunction] plot[smooth,domain=3.55:3.85] (\x, {-5.6*\x + 23.3});
+
+        \draw[name path=Pfunction] plot[smooth,domain=3.55:4] (\x, {0.28*\x + 2.4});
+
+        \draw[name path=Mfunction] plot[smooth,domain=3.94:4] (\x, {25.9 - 5.6*\x});
+
+        % % plot points
+
+        \fill[purple,name intersections={of=Kfunction and Tfunction}] (intersection-1) circle (2pt) node[below] {\tiny $x_0$};
+
+        \fill[purple,name intersections={of=Kfunction and Pfunction}] (intersection-1) circle (2pt) node[above] {\tiny $x_1$};
+
+        \fill[purple,name intersections={of=Pfunction and Mfunction}] (intersection-1) circle (2pt) node[below] {\tiny $x_2$};
+    \end{tikzpicture}
+\end{center}
+
+\example{2}, ellipses are elongated, gradient descent converges slowly, $\mu \ll L$: 
+
+% Image 2
+
+\notice \; General problem: If the function is so-called \textit{poorly scaled}, then the gradient descent converges slowly. This could be also seen from the convergence rate, if you substitute $\mu$ and $L$ into the formula.
+
+Let's bring more intuition on why the gradient descent converges slowly in this case. 
+
+\begin{gather*}
+    f(x_k + d) \approx m_k(d) := f(x_k) + \nabla f(x_k)^T d + \frac{1}{2} d^T B_k d \to \min_{d} \\ 
+    \nabla_d m_k(d) = \nabla f(x_k) + B_k d = 0 \Longrightarrow d = -B_k^{-1} \nabla f(x_k) \\ 
+    x_{k+1} = x_k + \alpha d_k = x_k - \alpha B_k^{-1} \nabla f(x_k)
+\end{gather*}
+
+\notice \; In Gradient Descent we take $B_k = I_n$. 
+
+This is a kinda general approach. We take a model that approximates our function in the vicinity of the current point, and iterate for the minimum of this model.
+
+\subsection{Adaptive procedure for L}
+
+The algorithm is the following:
+
+\begin{itemize}
+    \item Start with $x_0, L_0 = 1$
+    \item For $k = 0, 1, \dots$:
+    \begin{itemize}
+        \item We have $x_k, L_k$
+        \item Repeat: 
+        \begin{itemize} 
+            \item $x_{k+1} = x_{k-1} - \frac{1}{L_k} \nabla f(x_k)$
+            \item If $f(x_{k+1}) \leqslant f(x_k) + \nabla f(x_k)^T (x_{k+1} - x_k) + \frac{L_k}{2} \norm{x_{k+1} - x_k}^2$, then exit cycle.
+            \item $L_k = L_k \cdot \beta, \; \beta > 1$
+        \end{itemize}
+        \item If $\norm{\nabla f(x_{k+1})}^2 \leqslant \varepsilon$, then stop. 
+        \item $L_{k+1} = L_k \cdot \alpha, \; \alpha < 1$
+    \end{itemize}
+\end{itemize}
+
+Какая мотивация у дальнейших выкладок я не понимаю я поплыл. 
+
+We choose $\alpha$ with the following conditions: 
+\begin{enumerate}
+    \item $f(x_k + \alpha_k, d_k) \leqslant f(x_k) + c_1 \alpha_k \nabla f(x_k)^T d_k$
+    \item $\nabla f(x_k + \alpha_k d_k)^T d_k \geqslant c_2 \nabla f(x_k)^T d_k$
+\end{enumerate}
+
+If these two conditions are satisfied, this is true: 
+\begin{gather*}
+    f(x_{k+1}) \leqslant f(x_k) - \operatorname{const} \cdot \norm{\nabla f(x_k)}^2
+\end{gather*}
+
+And then we can derive the following chain of inequalities:
+
+\begin{align*}
+    f(x_{k+1}) &\leqslant f(x_k) - \operatorname{const} \cdot \norm{\nabla f(x_k)}^2 \\ 
+    &\leqslant \left(\nabla f(x_{k+1}) - \nabla f(x_k)\right)^T d_k \\ 
+    &\leqslant L \norm{x_{k+1} - x_k} \cdot \norm{d_k} \\ 
+    &= L \alpha_k \norm{d_k}^2
+\end{align*}
+
+\begin{gather*}
+    \alpha_k \geqslant \frac{(c_2 - 1)(\nabla f(x_k)^T d_k)^2}{L \norm{d_k}^2}
+\end{gather*}
+
+Then: 
+\begin{align*}
+    f(x_{k+1}) &\leqslant f(x_k) + c_1 \frac{(c_2 - 1)(\nabla f(x_k)^T d_k)^2}{L \norm{d_k}^2} \\ 
+    &= \dots \\ 
+    &= f(x_k) - \frac{c_1 (1 - c_2)}{L} \cos^2 \theta_k \cdot \norm{\nabla f(x_k)}^2
+\end{align*}
+
+Тут была пара примеров на лекции. 
+
+% \example{1} Yet another example: 
+% \begin{gather*}
+%     f(x) = \frac{1}{3} \abs{x}_2^3, \quad x \in \R \\ 
+%     f'(x) = \abs{x} \cdot x, \quad f''(x) = 2 \abs{x} 
+% \end{gather*}
+
+% If we apply the gradient descent, then:
+% \begin{align*}
+%     x_{k+1} &= x_k - \alpha \nabla f(x_k) \\  
+%     &= x_k - \alpha \abs{x_k} \cdot x_k \\
+%     &= (1 - \alpha \abs{x_k}) x_k
+% \end{align*}
+
+% If $x_0 > 0$, then:
+% \[ 
+%     1 - \alpha x_0 > 0 \Longrightarrow \alpha < \frac{1}{x_0}
+% \]
+% And then: 
+% \[
+%     x_0 > x_1 > x_2 > \dots 
+% \]
+
+Now recall the last result from the table of convergence rates. Let's prove it. 
+
+\begin{theorem}
+    We have $f \in \mathcal{C}_L^{1,1}$ and $f$ is convex.
+    Then the convergence rate of the gradient descent is $\mathcal{O} \left(\frac{1}{k}\right)$.
+\end{theorem}
+\begin{proof}
+
+
+    \begin{gather*}
+        f(x_{opt}) \geqslant f(x_k) + \nabla f(x_k)^T (x_{opt} - x_k) \\ 
+        f(x_k) \leqslant f(x_{opt}) + \nabla f(x_k)^T (x_k - x_{opt})
+    \end{gather*}
+    Continue: 
+    \begin{align*}
+        f(x_{k+1}) - f(x_{opt}) &\leqslant f(x_k) - f(x_{opt}) - \frac{1}{2L} \norm{\nabla f(x_k)}^2 \\ 
+        &\leqslant \nabla f(x_k)^T (x_k - x_{opt}) - \frac{1}{2L} \norm{\nabla f(x_k)}^2 \\
+        &\leqslant \frac{L}{2} \left(\norm{x_k - x_{opt}}^2 - \norm{x_{k+1} - x_{opt}}^2\right)
+    \end{align*}
+    Now if we sum up all such terms for all $k$, we get:
+    \begin{align}
+        \sum_{i=0}^{k+1} \left(f(x_i) - f_{opt}\right) &\leqslant \frac{L}{2} \left( \norm{x_k - x_{opt}}^2 - \norm{x_{k+1} - x_{opt}}^2 + \dots + \norm{x_0 - x_{opt}}^2 - \norm{x_1 - x_{opt}}^2 \right) \\
+        &= \frac{L}{2} \left(\norm{x_0 - x_{opt}}^2 - \norm{x_{k+1} - x_{opt}}^2\right) \\
+        &\leqslant \frac{L}{2} \norm{x_0 - x_{opt}}^2
+    \end{align}
+
+    Step (2) is true because it is a telescopic sum.
+
+    Finally: 
+    \begin{gather*}
+        \boxed{f(x_{k+1}) - f_{opt} \leqslant \frac{L \norm{x_0 - x_{opt}}^2}{2k}}
+    \end{gather*}
+\end{proof}
