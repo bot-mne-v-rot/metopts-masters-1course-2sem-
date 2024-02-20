@@ -1,0 +1,338 @@
+\section{Newton method}
+
+Today the main topic of our lecture is the Newton method. We will start with recalling different matrix decompositions and then move to the Newton method.
+
+\subsection{Standard Matrix Decompositions}
+
+We are up to solving a general system of linear equations: 
+\[
+A \vec{x} = \vec{b}
+\]
+
+Depending on the shape of the matrix $A$: 
+\begin{itemize}
+    \item If $A \in \mathbb{R}^{n \times n}, \det(A) \neq 0$, then $x = A^{-1}b$.
+    \item If $A \in \mathbb{R}^{m \times n}, m > n$, then $x = (A^T A)^{-1} A^T b$.
+    \item Otherwise: $\norm{A \vec{x} - \vec{b}}^2 \to \min_x$.
+\end{itemize}
+
+However, if you take a look at, e.g. \texttt{numpy} library implementation, you will not see solutions of linear systems implemented in the same terms as above. This would have been to slow. Instead, matrix decompositions are used to minimize the number of operations.
+
+\subsubsection{Cholesky Decomposition}
+
+\[
+    A^T = A \succ 0 \Rightarrow A = L L^T, \text{ where } L \text{ is a lower triangular matrix}
+\]
+
+\notice \; I will use $\succ$ here to denote positive definiteness of a matrix.
+
+\[
+    A x = b \Longrightarrow L L^T x = b \Longleftrightarrow \begin{cases}
+        y = L^{-1} b \\
+        x = L^{-T} y
+    \end{cases}
+\]
+
+Computing the decomposition is $\mathcal{O}(\frac{n^3}{3})$, and solving the system is $\mathcal{O}(n^2)$.
+
+\subsubsection{Modified Cholesky Decomposition}
+
+\[
+    A^T = A \cancel{\succ} 0 \Rightarrow P^T A P = L D L^T
+\]
+
+Where L is a lower triangular matrix, and D is a block diagonal matrix. 
+
+\notice \; Blocks in $D$ are $1 \times 1$ or $2 \times 2$.
+
+\notice \; Matrix $P$ is called a permutation matrix. It has exactly one non-zero element in each row and each column, and this element is equal to 1.
+
+If we do such decomposition, what will be the solution of the system?
+
+\[ 
+    A x = b \Longrightarrow P L D L^T P^T x = b \Longleftrightarrow \begin{cases}
+        z = P L^{-T} b \\
+        y = D^{-1} z \\
+        x = L^{-1} P^T y
+    \end{cases}
+\]
+
+Computing the decomposition is $\mathcal{O}(\frac{n^3}{3})$, and solving the system is $\mathcal{O}(n^2)$.
+
+\subsubsection{LU Decomposition}
+
+\[
+    A \in \R^{m \times n} \Rightarrow P A = L U, L \in \R^{m \times \min(m, n)}, U \in \R^{\min(m, n) \times n}
+\]
+
+Where $L$ is a lower triangular matrix, and $U$ is an upper triangular matrix.
+
+\notice \; Computational complexity is 2 times more than Cholesky decomposition, but this decomposition doesn't require positive definiteness of the matrix. Complexity is $\mathcal{O}(\frac{2}{3} n^3)$.
+
+\subsubsection{QR Decomposition}
+
+\[
+    A \in \R^{m \times n}, m \geq n \Rightarrow A P = Q R, Q \in \R^{m \times m}, R \in \R^{m \times n}
+\]
+
+Where $Q$ is an orthogonal matrix, and $R$ is an upper triangular matrix.
+
+\notice \; Computational complexity is $\mathcal{O}(\frac{4}{3} n^3)$.
+
+How we solve the system with this decomposition?
+
+\[ 
+    x = (A^T A)^{-1} A^T b = (R^T Q^T Q R)^{-1} R^T Q^T b = (R^T R)^{-1} R^T Q^T b = R^{-1} R^{-T} R^T Q^T b = R^{-1} Q^T b
+\] 
+
+\notice \; $\mathcal{O}(n^2)$ complexity.
+
+\subsubsection{Eigenvalue Decomposition}
+
+\[
+    A^T = A \Rightarrow A = Q \Lambda Q^T, Q^T Q = I
+\]
+
+Where $Q$ is an orthogonal matrix, and $\Lambda$ is a diagonal matrix with eigenvalues of $A$ on the diagonal.
+
+\notice \; This is a very expensive decomposition, with 20 times more complexity than Cholesky decomposition. 
+
+\subsection{Newton Method}
+
+Our model is: 
+\begin{gather*}
+    f(x_k + d) \approx m_k(d) = f(x_k) + \nabla f(x_k)^T d + \frac{1}{2} d^T B_k d \to \min_d \\ 
+    \nabla m_k(d) = \nabla f(x_k) + B_k d = 0 \Longrightarrow d = -B_k^{-1} \nabla f(x_k) \\ 
+    x_{k+1} = x_k - \alpha_k d_k = x_k - \alpha_k B_k^{-1} \nabla f(x_k)
+\end{gather*}
+
+So and in Newton method, we chose $B_k$ to be the Hessian of the function $f$ at the point $x_k$.
+\[ 
+    B_k = \nabla^2 f(x_k)
+\]
+
+Newton method iteration is: 
+\[ 
+    x_{k+1} = x_k - \alpha_k (\nabla^2 f(x_k))^{-1} \nabla f(x_k)
+\]
+
+To be able to solve this system, we need to require that the Hessian is positive definite. 
+
+If this condition is satisfied, we can garantuee, that: 
+\[
+    \nabla f(x_{k+1})^T d_k = - \nabla f(x_{k+1})^T (\nabla^2 f(x_k))^{-1} \nabla f(x_k) < 0
+\]
+This means that the direction is the negative gradient, meaning that the function is decreasing.
+
+\begin{theorem}
+    Newton method doesn't struggle from poorly scaled functions, like gradient descent does. 
+\end{theorem}
+\begin{proof}
+    Say we have a function: 
+    \[
+        f(x) \to \min_x 
+    \]
+
+    Lets say it has form of an ellipsoid, a circular, good one, not ellongated. Then we reparametrize the function with a linear transformation. And let's see what happens if we apply newton method to the reparametrized and the original function.
+
+    \[
+        x = A \tilde{x} \quad \tilde{x} = A^{-1} x \quad \tilde{f} (\tilde{x}) = f(A \tilde{x}) 
+    \]
+
+    To apply the Newton method, we need the gradient and the Hessian of the function $\tilde{f}$.
+    \[
+        d \tilde{f} = \nabla f (A \tilde{x})^T A d \tilde{x} \Longrightarrow \nabla \tilde{f} (\tilde{x}) = A^T \nabla f (A \tilde{x})
+    \]
+
+    And the Hessian:
+    \begin{align*}
+        d^2 \tilde{f} &= d (\nabla f (A \tilde{x})^T A d \tilde{x_1}) \\ 
+        &= (\nabla^2 f (A \tilde{x}) A d \tilde{x_2})^T A d \tilde{x_1} \\ 
+        &= d \tilde{x_1}^T A^T \nabla^2 f (A \tilde{x}) A d \tilde{x_1} \\ 
+        &\Longrightarrow \nabla^2 \tilde{f} (\tilde{x}) \\ 
+        &= A^T \nabla^2 f (A \tilde{x}) A
+    \end{align*}
+
+    So we can apply the Newton method to the function $\tilde{f}$.
+    \[
+        \tilde{x}_{k+1} = \tilde{x}_k - \alpha_k (\nabla^2 \tilde{f} (\tilde{x}_k))^{-1} \nabla \tilde{f} (\tilde{x}_k) = \tilde{x}_k - \alpha_k A^{-1} (\nabla^2 f (A \tilde{x}_k))^{-1} A^{-T} A^{T} \nabla f (A \tilde{x}_k)
+    \]
+
+    And in the original coordinates: 
+    \[ 
+        x_{k+1} = x_k - \alpha_k (\nabla^2 f (x_k))^{-1} \nabla f (x_k)
+    \]
+
+    What do we get? The step is the same, but multiplied by the matrix $A$. This means that the Newton method is invariant to linear transformations of the space and does not struggle from poorly scaled functions.
+\end{proof}
+
+\subsection{Convergence of the Newton method}
+
+\subsubsection{Global convergence rate}
+
+We will use a general result, that we have already deduced: 
+
+\[
+    x_{k+1} = x_k + \alpha_k d_k \quad \nabla f(x_{k})^T d_k < 0 
+\]
+
+What does it mean for the point to be close to the minimum? These are Armijo and Wolfe conditions.
+\begin{itemize}
+    \item $f(x_k + \alpha_k d_k) \leqslant f(x_k) + c_1 \alpha_k \nabla f(x_k)^T d_k$
+    \item $\nabla f(x_k + \alpha_k d_k) \geqslant \nabla f(x_k)^T d_k$
+\end{itemize}
+
+From the previous lecture, we have deduced this condition on the convergence rate:  
+\[ 
+    f(x_{k+1}) \leqslant f(x_k) - \frac{c_1 (1 - c_2)}{L} \cos^2 \theta_k \norm{\nabla f(x_k)}^2
+\] 
+
+Here we only need to prove that $\cos \theta_k$ is bounded away from 0: 
+
+\[ 
+    \cos \theta_k \leqslant -\delta < 0
+\]
+
+If we show that, we can then continue with a prove of linear convergence of the Gradient descent from the previous lecture.
+
+Here we show that the constant is bounded: 
+
+\begin{align*}
+    \cos \theta_k &= \frac{\nabla f(x_k)^T d_k}{\norm{\nabla f(x_k)} \norm{d_k}} \\ 
+    &= \frac{- \nabla f(x_k)^T (\nabla^2 f(x_k))^{-1} \nabla f(x_k)}{\norm{\nabla f(x_k)} \norm{(\nabla^2 f(x_k))^{-1} \nabla f(x_k)}} \\ 
+    &\leqslant - \frac{\lambda_{\min}((\nabla^2 f(x_k))^{-1}) \cancel{\norm{\nabla f(x_k)}^2}}{\cancel{\norm{\nabla f(x_k)}^2} \lambda_{\max}((\nabla^2 f(x_k))^{-1})} \\ 
+    &= - \frac{\lambda_{\min}}{\lambda_{\max}} \\ 
+    &= -\delta < 0 
+\end{align*}
+
+\subsubsection{Local convergence rate}
+
+Global convergence means that we start from arbitrary point and converge to the minimum. Local convergence means that we start from a point close to the minimum and converge to the minimum.
+
+\begin{theorem}
+    If $f \in \mathcal{C}^{2, 2}_M$, $\nabla^2 f(x_{opt}) \geqslant \mu I, \alpha_k = 1$ then: 
+    \[
+        \exists r : \; \forall x_0 : \; \norm{x_0 - x_{opt}} \leqslant r
+    \]
+    and for Newton method: 
+    \[ 
+        \norm{x_k - x_{opt}} \leqslant const \cdot \norm{x_k - x_{opt}}^2
+    \]
+
+    Step is: 
+    \begin{gather*}
+        r_{k+1} \leqslant const \cdot r_k^2 \\ 
+        \frac{r_{k+1}}{r_k} \leqslant const \cdot \frac{r_k^2}{r_k} \to 0 \Longrightarrow \text{ superlinear convergence}
+    \end{gather*}
+\end{theorem}
+\begin{proof}
+    \begin{align*}
+        \norm{x_{k+1} - x_{opt}} &= \norm{x_k - H_k^{-1} \nabla f(x_k) - x_{opt}} \\ 
+        &= \norm{H_k^{-1} (H_k (x_k - x_{opt}) - (\nabla f(x_k) - \nabla f(x_{opt})))} \\
+        &= \norm{H_k^{-1} (H_k (x_k - x_{opt}) - \int_0^1 \nabla^2 f(x_{opt} + \tau (x_k - x_{opt})) (x_k - x_{opt}) d \tau)} \\
+        &= \norm{H_k^{-1} \left( \int_0^1 H_k (x_k - x_{opt}) d \tau - \int_0^1 \nabla^2 f(x_{opt} + \tau (x_k - x_{opt})) (x_k - x_{opt}) d \tau \right)} \\
+        &= \norm{H_k^{-1} \int_0^1 (\nabla^2 f(x_k) - \nabla^2 f(x_{opt} + \tau (x_k - x_{opt})) (x_k - x_{opt}) d \tau)} \\ 
+        &\leqslant \norm{H_k^{-1}} \int_0^1 \norm{\nabla^2 f(x_k) - \nabla^2 f(x_{opt} + \tau (x_k - x_{opt}))} \norm{x_k - x_{opt}} d \tau \\
+        &\leqslant \norm{H_k^{-1}} \int_0^1 M (1 - \tau) \norm{x_k - x_{opt}}^2 d \tau \\
+        &= \norm{H_k^{-1}} \cdot \frac{M}{2} \cdot \norm{x_k - x_{opt}}^2 \\
+    \end{align*}
+    The only thing left is to show why the norm of the inverse of the Hessian is bounded.
+    \[
+        \norm{H_k^{-1}} \leqslant \frac{1}{\mu}
+    \]
+    It could be shown by the following inequality:
+    \[
+        H_k = \nabla^2 f(x_{opt}) \geqslant \mu I \Longrightarrow \norm{ \nabla^2 f(x_{k})} \geqslant \frac{\mu}{2} \Longrightarrow \norm{H_k^{-1}} \leqslant \frac{1}{\mu}
+    \]
+\end{proof}
+
+\subsection{Hessian modifications}
+
+Our iteration is: 
+\[
+    x_{k+1} = x_k - \alpha_k B^{-1}_k \nabla f(x_k), \quad B_k = \nabla^2 f(x_k) + E_k, \; B_k \succ 0
+\]
+
+Where $E_k$ is a symmetric matrix, modifying the Hessian.
+
+We can make several modifications to the Hessian, we will cover couple of them. 
+
+\subsubsection{Regularization}
+
+\[ 
+    \nabla^2 f(x_k) = Q \Lambda Q^T, \; \Lambda = \text{diag}(\lambda_1, \lambda_2, \dots, \lambda_n)
+\] 
+
+Then modified Hessian is:
+\begin{gather*}
+    B_k = Q \tilde{\Lambda} Q^T, \; \tilde{\Lambda} = \begin{cases}
+        \lambda_i, \; \text{if } \lambda_i \geqslant \varepsilon \\
+        \varepsilon, \; \text{otherwise}
+    \end{cases}
+\end{gather*}
+
+\subsubsection{Diagonal modification}
+
+\[
+    B_k = \nabla^2 f(x_k) + \tau_k I 
+\]
+
+Then: 
+\[ 
+    Q \lambda Q^T + \tau_k I = Q \lambda Q^T + \tau_k Q Q^T = Q (\lambda + \tau_k I) Q^T
+\]
+
+Iterations are:
+\[
+    x_{k+1} = x_k - \alpha_k (\nabla^2 f(x_k) + \tau_k I)^{-1} \nabla f(x_k)
+\]
+
+If $\tau_k \gg 1$, then the method is close to the gradient descent. If $\tau_k \ll 1$, then the method is close to the Newton method. We use a stable and well-performing method when we can and switch to Newton method when we are close to the minimum.
+
+The algorithm may look like this:
+\begin{itemize}
+    \item Every step we have $\nabla^2 f(x_k), \tau_k$
+    \item Repeat: 
+    \begin{itemize}
+        \item $B_k = \nabla^2 f(x_k) + \tau_k I$
+        \item $B_k = L L^T$
+        \item If success, then exit 
+        \item $\tau_k = \tau_k \cdot \gamma, \gamma > 1$
+    \end{itemize}
+    \item $\tau_{k+1} = \tau_k \cdot \rho, \rho < 1$
+\end{itemize}
+
+\subsubsection{Modification of LDL decomposition}
+The most fancy one, takes advantage of both previous modifications.
+
+\[
+    \nabla^2 f(x_k) = P L D L^T P^T
+\]
+
+Where $P$ is a permutation matrix, $L$ is a lower triangular matrix, and $D$ is a block diagonal matrix. 
+
+For matrix $D$ let's cosider its eigenvalue decomposition and modify it in the same way as we did in the regularization method: 
+\begin{gather*}
+    D = Q \Lambda Q^T, \Longrightarrow \tilde{D} = Q \tilde{\Lambda} Q^T \\ 
+    B_k = P L \tilde{D} L^T P^T
+\end{gather*}
+
+This method is great, however, not used a lot in the standard libraries, because LDL decomposition is not popular in the standard libraries. Yet, it works better then the latter.
+
+\example 
+\begin{align*}
+    &f(x) = \frac{1}{3} \norm{x}^3 = \frac{1}{3} (x^T x)^{3/2} \\ 
+    &df = \frac{1}{3} \frac{3}{2} (x^T x)^{1/2} 2x^T dx \\ 
+    &d^2 f = \frac{1}{2} (x^T x)^{-1/2} 2x^T dx_2 x^T dx_1 + (x^T x)^{1/2} dx_2^T dx_1 \\ 
+    &\nabla f(x) = \norm{x} x \\
+    &\nabla^2 f(x) = \frac{1}{\norm{x}} x x^T + \norm{x} I
+\end{align*}
+
+And: 
+\begin{align*}
+    y &= x - \alpha (\nabla^2 f(x))^{-1} \nabla f(x) \\ 
+    &= x - \alpha \left(\frac{1}{\norm{x}} x x^T + \norm{x} T\right)^{-1} \norm{x} x \\ 
+    &= x - \alpha \left(\frac{1}{\norm{x}} x x^T + \norm{x} I\right)^{-1} \norm{x} x \\ 
+    &= x - \alpha \left(\frac{1}{\norm{x}} I - \frac{1}{\norm{x}} x \left(\norm{x} + x^T \frac{1}{\norm{x}} x\right)^{-1} x^T \frac{1}{\norm{x}}\right) \norm{x} x \\
+    &= x - \frac{\alpha}{2} x = (1 - \frac{\alpha}{2}) x
+\end{align*}
