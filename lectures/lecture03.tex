@@ -289,18 +289,21 @@ Iterations are:
 
 If $\tau_k \gg 1$, then the method is close to the gradient descent. If $\tau_k \ll 1$, then the method is close to the Newton method. We use a stable and well-performing method when we can and switch to Newton method when we are close to the minimum.
 
-The algorithm may look like this:
-\begin{itemize}
-    \item Every step we have $\nabla^2 f(x_k), \tau_k$
-    \item Repeat: 
-    \begin{itemize}
-        \item $B_k = \nabla^2 f(x_k) + \tau_k I$
-        \item $B_k = L L^T$
-        \item If success, then exit 
-        \item $\tau_k = \tau_k \cdot \gamma, \gamma > 1$
-    \end{itemize}
-    \item $\tau_{k+1} = \tau_k \cdot \rho, \rho < 1$
-\end{itemize}
+\begin{algorithm}
+    \caption{Diagonal modification Newton method}
+    \begin{algorithmic}[1]
+    \State For each step, obtain $\nabla^2 f(x_k), \tau_k$
+    \While{some condition}
+        \State $B_k = \nabla^2 f(x_k) + \tau_k I$
+        \State $B_k = L L^T$
+        \If{success}
+            \State \textbf{exit}
+        \EndIf
+        \State $\tau_k = \tau_k \cdot \gamma, \;\; \gamma > 1$
+    \EndWhile
+    \State $\tau_{k+1} = \tau_k \cdot \rho, \;\; \rho < 1$
+\end{algorithmic}
+\end{algorithm}
 
 \subsubsection{Modification of LDL decomposition}
 The most fancy one, takes advantage of both previous modifications.

@@ -336,21 +336,26 @@ This is a kinda general approach. We take a model that approximates our function
 
 The algorithm is the following:
 
-\begin{itemize}
-    \item Start with $x_0, L_0 = 1$
-    \item For $k = 0, 1, \dots$:
-    \begin{itemize}
-        \item We have $x_k, L_k$
-        \item Repeat: 
-        \begin{itemize} 
-            \item $x_{k+1} = x_{k-1} - \frac{1}{L_k} \nabla f(x_k)$
-            \item If $f(x_{k+1}) \leqslant f(x_k) + \nabla f(x_k)^T (x_{k+1} - x_k) + \frac{L_k}{2} \norm{x_{k+1} - x_k}^2$, then exit cycle.
-            \item $L_k = L_k \cdot \beta, \; \beta > 1$
-        \end{itemize}
-        \item If $\norm{\nabla f(x_{k+1})}^2 \leqslant \varepsilon$, then stop. 
-        \item $L_{k+1} = L_k \cdot \alpha, \; \alpha < 1$
-    \end{itemize}
-\end{itemize}
+\begin{algorithm}
+    \caption{Adaptive procedure for L}
+    \begin{algorithmic}[1]
+    \State Initialize $x_0, L_0 = 1$
+    \For {$k = 0, 1, \ldots$}
+        \State Obtain $x_k, L_k$
+        \While{true}
+            \State $x_{k+1} = x_{k-1} - \frac{1}{L_k} \nabla f(x_k)$
+            \If{$f(x_{k+1}) \leqslant f(x_k) + \nabla f(x_k)^T (x_{k+1} - x_k) + \frac{L_k}{2} \norm{x_{k+1} - x_k}^2$} 
+                \State \textbf{exit}
+            \EndIf
+            \State $L_k = L_k \cdot \beta, \;\; \beta > 1$
+        \EndWhile
+        \If{$\norm{\nabla f(x_{k+1})}^2 \leqslant \varepsilon$} 
+            \State \textbf{stop}
+        \EndIf
+        \State $L_{k+1} = L_k \cdot \alpha, \;\; \alpha < 1$
+    \EndFor
+\end{algorithmic}
+\end{algorithm}
 
 Какая мотивация у дальнейших выкладок я не понимаю я поплыл. 
 

@@ -247,35 +247,53 @@ What are the stopping conditions for the expansion procedure?
 We do an expansion procedure and then the zooming procedure.
 
 \begin{definition} \textit{Expansion procedure}:
-\begin{itemize}
-  \item $\alpha_0 = 0, \alpha_1 \in (0, \alpha_{max})$
-  \item Repeat: 
-  \begin{itemize}
-    \item Compute $\varphi(\alpha_i)$
-    \item If $\varphi(\alpha_i) > \varphi(0) + c_1 \alpha_i \varphi'(0)$ or $\varphi(\alpha_i) > \varphi(\alpha_{i-1})$, then $\operatorname{zoom}(\alpha_{i-1}, \alpha_i)$
-    \item Compute $\varphi'(\alpha_i)$
-    \item If $\abs{\varphi'(\alpha_i)} \leqslant c_2 \abs{\varphi'(0)}$, then $\alpha_k = \alpha_i$ and stop 
-    \item If $\varphi'(\alpha_i) \geqslant 0$, then $\operatorname{zoom}(\alpha_{i-1}, \alpha_i)$
-    \item Pick $\alpha_{i+1} \in (\alpha_i, \alpha_{max})$
-    \item $i++$
-  \end{itemize}
-\end{itemize}
+\begin{algorithm}
+  \caption{Expansion procedure}
+  \begin{algorithmic}[1]
+  \State Initialize $\alpha_0 = 0, \alpha_1 \in (0, \alpha_{max})$
+  \While{true}
+      \State Compute $\varphi(\alpha_i)$
+      \If{$\varphi(\alpha_i) > \varphi(0) + c_1 \alpha_i \varphi'(0)$ or $\varphi(\alpha_i) > \varphi(\alpha_{i-1})$}
+          \State Call $\operatorname{zoom}(\alpha_{i-1}, \alpha_i)$
+      \EndIf
+      \State Compute $\varphi'(\alpha_i)$
+      \If{$\abs{\varphi'(\alpha_i)} \leqslant c_2 \abs{\varphi'(0)}$}
+          \State Set $\alpha_k = \alpha_i$ and \textbf{stop}
+      \EndIf
+      \If{$\varphi'(\alpha_i) \geqslant 0$}
+          \State Call $\operatorname{zoom}(\alpha_{i-1}, \alpha_i)$
+      \EndIf
+      \State Pick $\alpha_{i+1} \in (\alpha_i, \alpha_{max})$
+      \State Increment $i$
+  \EndWhile
+\end{algorithmic}
+\end{algorithm}
 \end{definition}
 
 On the zooming procedure we are doing aka binary search and reducing the interval of the search.
 
 \begin{definition} \textit{Zoom procedure}: 
 Depends on two arguments: $\alpha_{low}, \alpha_{high}$. Requirements for the arguments: $\alpha_{low}$ should satisfy the Armijo condition ans has the least function value we have seen so far. Also $\varphi'(\alpha_{low})(\alpha_{high} - \alpha_{low}) < 0$.
-\begin{itemize}
-  \item Repeat: 
-  \begin{itemize}
-    \item Choose $\alpha \in (\alpha_{low}, \alpha_{high})$
-    \item Compute $\varphi(\alpha)$
-    \item If $\varphi(\alpha) > \varphi(0) + c_1 \alpha \varphi'(0)$ or $\varphi(\alpha) > \varphi(\alpha_{low})$, then $\alpha_{high} = \alpha$
-    \item Compute $\varphi'(\alpha)$
-    \item If $\abs{\varphi'(\alpha)} \leqslant c_2 \abs{\varphi'(0)}$, then $\alpha_k = \alpha$ and stop
-    \item If $\varphi'(\alpha) (\alpha_{high} - \alpha_{low}) \geqslant 0$, then $\alpha_{high} = \alpha_{low}$
-    \item $\alpha_{low} = \alpha$
-  \end{itemize}
-\end{itemize}
+\begin{algorithm}
+  \caption{Zoom procedure}
+  \begin{algorithmic}[1]
+  \While{some condition}
+      \State Choose $\alpha \in (\alpha_{low}, \alpha_{high})$
+      \State Compute $\varphi(\alpha)$
+      \If{$\varphi(\alpha) > \varphi(0) + c_1 \alpha \varphi'(0)$ or $\varphi(\alpha) > \varphi(\alpha_{low})$}
+          \State $\alpha_{high} = \alpha$
+      \EndIf
+      \State Compute $\varphi'(\alpha)$
+      \If{$\abs{\varphi'(\alpha)} \leqslant c_2 \abs{\varphi'(0)}$}
+          \State Set $\alpha_k = \alpha$ and \textbf{stop}
+      \EndIf
+      \If{$\varphi'(\alpha) (\alpha_{high} - \alpha_{low}) \geqslant 0$}
+          \State $\alpha_{high} = \alpha_{low}$
+      \EndIf
+      \State $\alpha_{low} = \alpha$
+  \EndWhile
+\end{algorithmic}
+\end{algorithm}
 \end{definition}
+
+\newpage

@@ -1,0 +1,310 @@
+\section{Conjugate Gradient Method}
+
+Let's recall what algorithms we have already discussed for minimizing a function. 
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{c c c}
+        \toprule
+        \textbf{Method} & \textbf{Memory} & \textbf{Computational costst} \\
+        \midrule
+        GD & $\mathcal{O}(n)$ & $\mathcal{O}(qk)$ \\
+        \midrule
+        Newton Method & $\mathcal{O}(n^2)$ & $\mathcal{O}(qn + n^3)$ \\
+        \midrule
+        Conjugate Gradient & $\mathcal{O}(n)$ & $\mathcal{O}(qn)$ \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Now let's introduce the Conjugate Gradient Method (CG). 
+
+The problem we are going to solve is the following:
+\begin{gather*}
+    f(x) = \frac{1}{2} x^T A x - b^T x \to \min_x \\ A^T = A \succ 0 \\ 
+    \nabla f(x) = Ax - b = 0 \\ 
+    x_{k+1} = x_k + \alpha_k d_k
+\end{gather*}
+So function $f$ is quadratic. We want to be able to solve this problem faster than inversing the matrix $A$. Which would have been the analytical solution to this system.
+
+Let's notice that the step $\alpha_k$ can be chosen without the Armijo and Wolfe conditions, but may be computed analytically.
+
+\begin{align*}
+    0 &= \frac{\partial}{\partial \alpha} f(x_k + \alpha d_k) \\ 
+    &= \nabla f(x_k + \alpha d_k)^T d_k \\
+    &= (A(x_k + \alpha d_k) - b)^T d_k \\
+    &= \oast
+\end{align*}
+
+Today we will denote: 
+\[ 
+    g_k := A x_k - b
+\] 
+
+\begin{align*}
+    \oast &= g^T_k d_k + \alpha d_k^T A d_k  \\ 
+    &\Longrightarrow \alpha = - \frac{g_k^T d_k}{d_k^T A d_k}
+\end{align*}
+
+\begin{conj}
+    $\{d_i\}^{n-1}_{i=0}$ --- conjugate with respect  to $A$ if $d_i^T A d_j = 0$ for $i \neq j$.
+\end{conj}
+
+\begin{theorem}
+    If $\{d_i\}^{n-1}_{i=0}$, then $\{d_i\}^{n-1}_{i=0}$ is linearly independent.
+\end{theorem}
+\begin{proof}
+    \[
+        \sum^{n-1}_{i=0} \alpha_i d_i = 0 
+    \]
+    Multiply that by $d_j^T A$:
+    \[
+        0 = \sum^{n-1}_{i=0} \alpha_i d_j^T A d_i = \alpha_j d_j^T A d_j \Longrightarrow \alpha_j = 0
+    \]
+\end{proof}
+
+Why may we be interested in such a property?
+
+If $\{d_i\}^{n-1}_{i=0}$ are conjugate, then $\{d_i\}$ --- basis in $\mathbb{R}^n$.
+
+\begin{gather*}
+    A x_opt = b \\ 
+    x_opt - x_0 = \sum^{n-1}_{i=0} \alpha_i d_i \mid \cdot d_j^T A \\
+    d_j^T A (x_opt - x_0) = \sum^{n-1}_{i=0} \alpha_i d_j^T A d_i = \alpha_j d_j^T A d_j
+\end{gather*}
+Then what is the optimal $\alpha_j$?
+\begin{gather*}
+    \alpha_j = \frac{d_j^T A (x_opt - x_0)}{d_j^T A d_j} = \frac{d_j^T (b - A x_0)}{d_j^T A d_j} = - \frac{d_j^T g_0}{d_j^T A d_j}
+\end{gather*}
+
+So using such conjugate directions we can find the optimal step $\alpha_j$, which looks really similar to the one, which we have found analytically. Actually, they are equal. Let's check that. 
+
+\begin{theorem}
+    \[
+        g_0^T d_k = g_k^T d_k
+    \]
+\end{theorem}
+\begin{proof}
+    \begin{align*}
+        g_k^T d_k &= (A x_k - b)^T d_k = (A (x_0 + \sum^{k-1}_{i=0} \alpha_i d_i) - b)^T d_k \\
+        &= g_0^T d_k + \sum^{k-1}_{i=0} \alpha_i d_i^T A d_k = g_0^T d_k
+    \end{align*}
+\end{proof}
+
+And one more important property of the conjugate directions:
+\begin{theorem}
+    \[
+        g_k^T d_j = 0 \text{ for } j < k
+    \]
+\end{theorem}
+\begin{proof}
+    \begin{align*}
+        g_k^T d_j &= (A x_k - b)^T d_j = (A (x_0 + \sum^{k-1}_{i=0} \alpha_i d_i) - b)^T d_j \\
+        &= g_0^T d_j + \sum^{k-1}_{i=0} \alpha_i d_i^T A d_j = 0
+    \end{align*}
+\end{proof}
+
+
+Now we will learn to fastly converge to the solution using the conjugate directions.
+
+\[ 
+    f(x) = \frac{1}{2} x^T A x - b^T x 
+\] 
+
+\begin{gather*}
+    C:= [d_0, d_1, \ldots, d_{n-1}] \in \mathbb{R}^{n \times n} \\ 
+    x = C \tilde{x}, \quad \tilde{x} = C^{-1} x
+\end{gather*}
+
+And if we optimize w.r.t $\tilde{x}$: 
+
+\begin{align*}
+    \tilde{f}(\tilde{x}) &:= f(C \tilde{x}) \\ 
+    &= \frac{1}{2} \tilde{x}^T \underbrace{C^T A C}_{\Lambda} \tilde{x} - \tilde{x}^T C^T b \\
+    &= \frac{1}{2} \sum^{n-1}_{i=0} \left(\lambda_i \tilde{x}_i^2 - 2 (C^ b)_i \tilde{x}_i \right) \to \min_{\tilde{x}}
+\end{align*}
+As could be seen from the last expression, we can now solve n independent one-dimensional problems instead of a multidimensional one.
+
+We got a diagonalization to a linear form.
+
+
+\textbf{So Conjugate Gradient algorithm converges in no more steps then the dimension of the space.}
+
+Now let's find out how to find the conjugate directions.
+
+\begin{align*}
+    &z_0, z_1, \ldots, z_{n-1} \sim \mathcal{N} \\ 
+    &d_0 = z_0 \\ 
+    &d_1 = z_1 - \operatorname{proj}_{d_0} z_1 \\
+    &d_2 = z_2 - \operatorname{proj}_{d_0} z_2 - \operatorname{proj}_{d_1} z_2 \\
+    &\ldots \\
+    &d_k = z_k - \sum^{n-2}_{i=0} \operatorname{proj}_{d_i} z_{n - 1}
+\end{align*}
+
+We can compute the conjugate directions using the following algorithm:
+\begin{gather*}
+    \begin{cases}
+        d_0 = -g_0 \\ 
+        d_{k+1} = -g_{k+1} + \beta_k d_k
+    \end{cases}
+\end{gather*}
+
+Then: 
+\begin{align*}
+    0 &= d^T_{k+1} A d_k \\ 
+    &= (-g_{k+1} + \beta_k d_k)^T A d_k \\ 
+    &= -g_{k+1}^T A d_k + \beta_k d_k^T A d_k \\
+    &\Longrightarrow \beta_k = \frac{g_{k+1}^T A d_k}{d_k^T A d_k}
+\end{align*}
+
+A bunch of properties of the conjugate directions:
+
+\begin{theorem}
+    $\{g_0, g_1, \ldots, g_{n-1}\} \in \mathcal{L} \{ d_0, d_1, \ldots, d_{n-1} \}$ --- Krylov subspace
+\end{theorem}
+\begin{proof}
+    If $g_0 \in \mathcal{L} \{g_0\}, d_0 \in \mathcal{L} \{g_0\}$: 
+    \begin{gather*}
+        g_{k+1} = A x_{k+1} - b = A (x_k + \alpha_k d_k) - b = g_k + \alpha_k A d_k \\ 
+        d_{k+1} = -g_{k+1} + \beta_k d_k \in \mathcal{L} \{ g_0, \ldots, A^{k+1} g_0 \}
+    \end{gather*}
+\end{proof}
+
+\begin{theorem}
+    \[
+        g_k^T d_j = 0 \text{ for } j < k
+    \]
+\end{theorem}
+\begin{proof}
+    \[ 
+        g_j = \sum^{j}_{i=0} \gamma_i d_i \Longrightarrow g_k^T g_j = \sum^{j}_{i=0} \gamma_i g_k^T d_i = 0
+    \]
+\end{proof}
+
+\begin{theorem}
+    \[
+        d_{k+1}^T A d_j = 0 \text{ for } j < k
+    \]
+\end{theorem}
+\begin{proof}
+    \[ 
+        d_{k+1}^T A d_j = (-g_{k+1} + \beta_k d_k)^T A d_j = -g_{k+1}^T A d_j = -g_{k+1}^T \frac{g_{j+1} - g_j}{\alpha_j} = 0
+    \]
+\end{proof}
+
+Let's finally find the formula for $\alpha_k$ and $\beta_k$: 
+
+\begin{align*}
+    \alpha_k &= - \frac{g_k^T d_k}{d_k^T A d_k} \\ 
+    &= \frac{-g_k^T (-g_k + \beta_{k-1} d_{k-1})}{d_k^T A d_k}
+    = \boxed{\frac{g_k^T g_k}{d_k^T A d_k}} \\ 
+\end{align*}
+
+\begin{align*}
+    \beta_k &= \frac{g_{k+1}^T A d_k}{d_k^T A d_k} \\ 
+    &= \frac{g_{k+1}^T (g_{k+1} - g_k)}{d_k^T A d_k \alpha_k} = \boxed{\frac{g_{k+1}^T g_{k+1}}{g_k^T g_k}}
+\end{align*}
+
+\begin{algorithm}
+    \caption{Conjugate Gradient Method}
+    \begin{algorithmic}[1]
+    \State{Initialize $A$, $b$, $x_0$, $\varepsilon$}
+    \State{$g_0 \gets A x_0 - b$}
+    \State{$d_0 \gets -g_0$}
+    \For{$k = 0, 1, \ldots$}
+        \State{$\alpha_k \gets \frac{g_k^T g_k}{d_k^T A d_k}$}
+        \State{$x_{k+1} \gets x_k + \alpha_k d_k$}
+        \State{$g_{k+1} \gets g_k + \alpha_k A d_k$}
+        \If{$\norm{g_{k+1}}^2 < \varepsilon$}
+            \Return{$x_{k+1}$}
+        \EndIf
+        \State{$\beta_k \gets \frac{g_{k+1}^T g_{k+1}}{g_k^T g_k}$}
+        \State{$d_{k+1} \gets -g_{k+1} + \beta_k d_k$}
+    \EndFor
+    \end{algorithmic}
+\end{algorithm}
+
+\subsubsection{Convergence of the CG Method}
+
+\begin{enumerate}
+    \item If $A$ has $r$ distinct eigenvalues, then the CG method converges in no more than $r$ steps.
+    \item If $A$ has $r$ clusters of eigenvalues, then the CG method converges in approximately $r$ steps.
+    \item $\mu := \lambda_{\min}(A), \quad L := \lambda_{\max}(A), \quad \kappa \mathcal{C}_{L}^{2,1}, f --- \mu$ strictly convex.
+\end{enumerate}
+
+How do we now apply the CG method to the non-quadratic functions? For that we can use the Fletcher-Reeves method.
+
+\begin{algorithm}
+    \caption{Fletcher-Reeves Method}
+    \begin{algorithmic}[1]
+    \State{Initialize $A$, $b$, $x_0$, $\varepsilon$}
+    \State{$g_0 \gets \nabla f(x_0)$}
+    \State{$d_0 \gets -g_0$}
+    \For{$k = 0, 1, \ldots$}
+        \State{$\alpha_k \gets \text{ linear search}$}
+        \State{$x_{k+1} \gets x_k + \alpha_k d_k$}
+        \State{$g_{k+1} \gets \nabla f(x_{k+1})$}
+        \If{$\norm{g_{k+1}}^2 < \varepsilon \norm{\nabla f(x_0)}$}
+            \Return{$x_{k+1}$}
+        \EndIf
+        \State{$\beta_k \gets \frac{g_{k+1}^T g_{k+1}}{g_k^T g_k}$}
+        \State{$d_{k+1} \gets -g_{k+1} + \beta_k d_k$}
+    \EndFor
+    \end{algorithmic}
+\end{algorithm}
+
+In practice modified Fletcher-Reeves method is used, e.g. Fletcher-Reeves with restarts.
+
+\subsection{Preconditioned Conjugate Gradient Method}
+
+We have the initial system: 
+\[ 
+    A x = b
+\] 
+
+We create a modied system:
+\[ 
+    \underbrace{S^{-T} A S^{-1}}_{\tilde{A}} \underbrace{S x}_{\tilde{x}} = \underbrace{S^{-T} b}_{\tilde{b}}
+\] 
+
+If we apply the CG method to the modified system and solve it, we can reconstruct the solution to the initial system: 
+\[ 
+    x = S^{-1} \tilde{x}
+\] 
+
+IF\! We can find such matrix $S$, that $\tilde{A}$ has a lower conditional number than $A$, then we can solve the modified system faster than the initial one!! Great success!! (How to find such $S$ is a different question).
+
+\begin{gather*}
+    \tilde{g_k} = \tilde{A} \tilde{x}_k - \tilde{b} = S^{-T} A S^{-1} S x_k - S^{-T} b = S^{-T} (A x_k - b) = S^{-T} g_k \\
+    \tilde{x_{k+1}} = \tilde{x_k} + \alpha_k \tilde{d_k} = S x_{k+1} \\
+    S x_{k+1} = S x_k + \alpha_k \tilde{d_k} \\
+    x_{k+1} = x_k + \alpha_k \underbrace{S^{-1} \tilde{d_k}}_{d_k}
+\end{gather*}
+
+And to compute $\alpha_k$ and $\beta_k$ we can use the following formulas:
+\begin{align*}
+    \alpha_k &= \frac{\tilde{g_k^T}\tilde{g_k}}{\tilde{d_k^T} \tilde{A} \tilde{d_k}} = \frac{g_k^T S^{-1} S^{-1} g_k}{d_k^T A d_k} =\boxed{\frac{g_k^T M^{-1} g_k}{d_k^T A d_k}} 
+\end{align*}
+
+\begin{align*}
+    \beta_k &= \frac{\tilde{g_{k+1}^T} \tilde{g_{k+1}}}{\tilde{g_k^T} \tilde{g_k}} = \boxed{\frac{g_{k+1}^T M^{-1} g_{k+1}}{g_k^T M^{-1} g_k}}
+\end{align*}
+
+\begin{algorithm}
+    \caption{Conditioned CG Method}
+    \begin{algorithmic}[1]
+    \State{$g_0 \gets A x_0 - b$}
+    \State{$d_0 \gets - M^{-1} g_0$}
+    \State{$k \gets 0$}
+    \While{$\norm{g_{k}} > \varepsilon \norm{b}$}
+        \State{$\alpha_k \gets \frac{\langle M^{-1} g_k, g_k\rangle}{\langle A d_k d_k \rangle}$}
+        \State{$x_{k+1} \gets x_k + \alpha_k d_k$}
+        \State{$g_{k+1} \gets g_k + \alpha_k A d_k$}
+        \State{$\beta_k \gets \frac{\langle M^{-1} g_{k+1}, g_{k+1}\rangle}{\langle M^{-1} g_k, g_k\rangle}$}
+        \State{$d_{k+1} \gets -M^{-1} g_{k+1} + \beta_k d_k$}
+        \State $k \gets k + 1$
+    \EndWhile
+    \end{algorithmic}
+\end{algorithm}
+
+\notice \; Usually used for well-constructed preconditioner $M$. Examples: diagonal matrix, sparse matrix. 
