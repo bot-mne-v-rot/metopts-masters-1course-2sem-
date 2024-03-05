@@ -8,3 +8,4 @@
 *.upb
 *.pdf
 **/.DS_Store
+*.tex.swp

@@ -20,14 +20,21 @@ jobs:
           uses: actions/upload-artifact@v3
           with:
             path: OptimizationMethods.pdf
+        - name: Generate release tag
+          id: generate_release_tag
+          uses: amitsingh-007/next-release-tag@v5.0.0
+          with:
+            github_token: ${{ secrets.GITHUB_TOKEN }}
+            tag_prefix: 'v'
+            tag_template: 'yyyy.mm.dd.i'
         - name: Create github release
           uses: softprops/action-gh-release@v1
           with:
             files: OptimizationMethods.pdf
-            tag_name: ${{ github.sha }}
+            tag_name: ${{ steps.generate_release_tag.outputs.next_release_tag }}
             name: Abstract release
             body: |
                 New abstract release
-            draft: true
+            draft: false
             prerelease: false
                 

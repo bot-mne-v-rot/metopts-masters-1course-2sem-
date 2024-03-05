@@ -1,0 +1,67 @@
+\section{Hessian free Newton algorithm}
+The question for today is ``Is it possible to construct an algorithm with the superlinear convergence rate but such that would be applicable to large scale problems?''
+
+The algorithm we are going to discuss today is called Hessian free Newton algorithm. It has other names such as \emph{Newton-cg}, \emph{Damped Newton}, \emph{Inexact Newton}. 
+
+The idea of the Hessian free Newton is to solve the linear system using conjugate gradient, but without the exact computation of Hessian as a matrix.
+\[ 
+    f(x) \to x_{\min} \quad x_{k+1} = x_k + \alpha_k d_k \quad H_k d_k = -g_k
+\] 
+
+The second idea used is to solve the linear system inexactlly. One of the arised problems is as follows: When we are far from the optimal point, inexactly computed gradient direction is fine, whereas when we are close to the optimal point, we need to compute the gradient direction more accurately, otherwise we will not be able to converge to the optimal point. So we should somehow measure the distance to the optimal point and adjust the accuracy of the gradient direction computation.
+\[ 
+    r_k = H_k d_k + g_k \quad \text{where stopping crit.} \quad \norm{r_k} \leq \nu_k \norm{g_k}
+\] 
+where $\nu_k$ is a forcing sequence.
+
+Firstly, what is the convergence rate of this procedure? Let $f \in \mathcal{C}^{2, 2}_M, \alpha_k = 1, \nabla^2 f(x_{opt}) \geqslant \mu I$. 
+\[ 
+    r_k = H_k d_k + g_k \quad d_k = H^{-1}_k (r_k - g_k) \quad \norm{r_k} \leq \nu_k \norm{g_k}
+\] 
+Then: 
+\begin{align*}
+    \norm{x_{k+1} - x_{opt}} &\leqslant \norm{x_k + d_k - x_{opt}} \\
+    &= \norm{x_k - x_{opt} + H^{-1}_k (r_k - g_k)} \\
+    &= \norm{H^{-1}_k (H^k (x_k - x_{opt}) + r_k - g_k)} \\
+    &\leqslant \norm{H^{-1}_k} \left( \lessbelow{\norm{H_k (x_k - x_{opt}) - g_k}}{\operatorname{const} \norm{x_k - x_{opt}}^2} - \lessbelow{\norm{r_k}}{\nu_k \norm{g_k}} \right)  
+\end{align*}
+Where: 
+\[
+    \norm{g_k} = \norm{\nabla f(x_k) - \nabla f(x_{opt})} \leqslant L \norm{x_k - x_{opt}}
+\] 
+
+How do we choose $\nu_k$? We can choose it as follows:
+\begin{enumerate}
+    \item $\nu_k = \nu < 1$ --- Linear convergence rate.
+    \item $\nu_k \to 0 \text{ as } k \to \infty$ --- Superlinear convergence rate. For this the typical choice is $\nu_k = \min{(\frac{1}{2}, \sqrt{g_k})}$.
+    \item $\nu_k = o(\norm{g_k})$ --- Quadratic convergence rate. Typical choice is $\nu_k = \min{(\frac{1}{2}, g_k)}$.
+\end{enumerate}
+
+Let's sketch the algorithm. 
+
+\begin{algorithm}
+    \caption{Hessian Free Newton}
+    \begin{algorithmic}[1]
+    \State{$g_0 \gets \nabla f(x_0)$}
+    \State{$k \gets 0$}
+    \While{$\norm{g_{k+1}}^2 \geqslant \varepsilon_k$}
+        \State{$\varepsilon_k \gets \min{(\frac{1}{2}, \sqrt{\norm{g_k}})} \norm{g_k}$}
+        \State{$\tilde{d_0} \gets 0 \text { or } d_k$}
+        \State{$\tilde{g_0} \gets H_k \tilde{d_0} + g_k$}
+        \State{$\tilde{u_0} = -\tilde{g_0}$}
+        \State{$t \gets 0$}
+        \While{$\norm{\tilde{g}_{t+1}} \geqslant \varepsilon_k$ and $t < 2n$}
+            \If{$\tilde{d_t}^T H_k \tilde{d}_t \leqslant \delta$}
+                \State{$\tilde{d_t} \gets \tilde{d_t}$}, \textbf{exit the loop}
+            \EndIf{}
+            \State{$\alpha_t \gets \frac{\tilde{g_t}^T \tilde{g_t}}{\tilde{d_t}^T H_k \tilde{d_t}}$}
+            \State{$\tilde{d}_{t+1} \gets \tilde{d_t} + \alpha_t \tilde{u_t}$}
+            \State{$g_{t+1} \gets \tilde{g_t} + \alpha_t H_k \tilde{d_t}$}
+            \State{$\tilde{\beta_t} \gets \frac{\tilde{g}_{t+1}^T \tilde{g}_{t+1}}{\tilde{g_t}^T \tilde{g_t}}$}
+            \State{$\tilde{u}_{t+1} \gets -\tilde{g}_{t+1} + \tilde{\beta_t} \tilde{u_t}$}
+        \EndWhile{}
+        \State{$x_{k+1} \gets x_k + \alpha_k d_k$}, \textbf{$\alpha_k$ satisfies Wolfe/Armijo conditions with $\alpha_0 = 1$}
+        \State{$g_{k+1} \gets \nabla f(x_{k+1})$}
+    \EndWhile{}
+    \end{algorithmic}
+\end{algorithm}
