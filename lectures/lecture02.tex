@@ -314,9 +314,22 @@ In which class of functions is our function?
     \end{tikzpicture}
 \end{center}
 
-\example{2}, ellipses are elongated, gradient descent converges slowly, $\mu \ll L$: 
+\example{2}, ellipses are elongated, gradient descent converges slowly, $\mu \ll L$. Image not finished but i guess everyone saw it a hundred times.
 
-% Image 2
+\begin{center}
+    \begin{tikzpicture}[thick,yscale=0.8]
+        % Axes
+        \draw[-latex,name path=xaxis] (-1,0) -- (10,0) node[above]{\large $x_1$};
+        \draw[-latex] (0,-2) -- (0,8)node[right]{\large $x_2$};;
+        
+        % Draw ellipses
+        \draw[rotate around={30:(4,4)},red] (6,4) ellipse (6cm and 1.6cm);
+        \draw[rotate around={30:(4,4)},blue] (6,4) ellipse (4.2cm and 1.12cm);
+        
+        % % % plot tangent line
+        \draw[dashed,name path=Tfunction]  plot[smooth,domain=2:5] (\x, {(0.3*\x + 1.07)});
+    \end{tikzpicture}
+\end{center}
 
 \notice \; General problem: If the function is so-called \textit{poorly scaled}, then the gradient descent converges slowly. This could be also seen from the convergence rate, if you substitute $\mu$ and $L$ into the formula.
 
@@ -447,3 +460,4 @@ Now recall the last result from the table of convergence rates. Let's prove it.
         \boxed{f(x_{k+1}) - f_{opt} \leqslant \frac{L \norm{x_0 - x_{opt}}^2}{2k}}
     \end{gather*}
 \end{proof}
+

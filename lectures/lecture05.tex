@@ -34,7 +34,7 @@ How do we choose $\nu_k$? We can choose it as follows:
 \begin{enumerate}
     \item $\nu_k = \nu < 1$ --- Linear convergence rate.
     \item $\nu_k \to 0 \text{ as } k \to \infty$ --- Superlinear convergence rate. For this the typical choice is $\nu_k = \min{(\frac{1}{2}, \sqrt{g_k})}$.
-    \item $\nu_k = o(\norm{g_k})$ --- Quadratic convergence rate. Typical choice is $\nu_k = \min{(\frac{1}{2}, g_k)}$.
+    \item $\nu_k = \mathcal{O}(\norm{g_k})$ --- Quadratic convergence rate. Typical choice is $\nu_k = \min{(\frac{1}{2}, g_k)}$.
 \end{enumerate}
 
 Let's sketch the algorithm. 
@@ -51,12 +51,12 @@ Let's sketch the algorithm.
         \State{$\tilde{u_0} = -\tilde{g_0}$}
         \State{$t \gets 0$}
         \While{$\norm{\tilde{g}_{t+1}} \geqslant \varepsilon_k$ and $t < 2n$}
-            \If{$\tilde{d_t}^T H_k \tilde{d}_t \leqslant \delta$}
+            \If{$\tilde{u_t}^T H_k \tilde{u}_t \leqslant \delta$}
                 \State{$\tilde{d_t} \gets \tilde{d_t}$}, \textbf{exit the loop}
             \EndIf{}
-            \State{$\alpha_t \gets \frac{\tilde{g_t}^T \tilde{g_t}}{\tilde{d_t}^T H_k \tilde{d_t}}$}
+            \State{$\alpha_t \gets \frac{\tilde{g_t}^T \tilde{g_t}}{\tilde{u_t}^T H_k \tilde{u_t}}$}
             \State{$\tilde{d}_{t+1} \gets \tilde{d_t} + \alpha_t \tilde{u_t}$}
-            \State{$g_{t+1} \gets \tilde{g_t} + \alpha_t H_k \tilde{d_t}$}
+            \State{$g_{t+1} \gets \tilde{g_t} + \alpha_t H_k \tilde{u_t}$}
             \State{$\tilde{\beta_t} \gets \frac{\tilde{g}_{t+1}^T \tilde{g}_{t+1}}{\tilde{g_t}^T \tilde{g_t}}$}
             \State{$\tilde{u}_{t+1} \gets -\tilde{g}_{t+1} + \tilde{\beta_t} \tilde{u_t}$}
         \EndWhile{}
@@ -65,3 +65,108 @@ Let's sketch the algorithm.
     \EndWhile{}
     \end{algorithmic}
 \end{algorithm}
+
+The last uncovered question here is how are we going to compute $H_k \tilde{u_t}$. Let's begin with a simple example of Logistic Regression.
+\[ 
+    \{x_i, y_i\}^N_{i=1} \quad x_i \in \mathbb{R}^d, y_i \in \{+1, -1\} \quad y(x) = \operatorname{sign}{(w^T x)} 
+\]
+And: 
+\[ 
+    F(w) = \sum^N_{i=1} \log{(1 + \exp{(-y_i w^T x_i)})} + \frac{\lambda}{2} \norm{w}^2 \to \min_w
+\]
+Then: 
+\[ 
+    \nabla^2 F(w) = \frac{1}{N} X^T B X + \lambda I \quad B = \operatorname{diag}{(p_i(1 - p_i))} \quad p_i = \sigma(y_i w^T x_i)(1 - \sigma(y_i w^T x_i))
+\]
+Let's: 
+\[ 
+    u := \nabla^2 F(w) d = (\frac{1}{2} X^T B X + \lambda I) d = \frac{1}{2} X^T B X d + \lambda d
+\]
+And: 
+\[ 
+    \begin{cases}
+        z_1 = X d \\
+        z_2 = B z_1 \\
+        u = \frac{1}{N} X^T z_2 + \lambda d
+    \end{cases}
+\]
+
+This example shows that there may be a better way for computing $H_k \tilde{u_t}$ than the direct computation of the Hessian.
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{c c}
+        \toprule
+        \textbf{Method} & \textbf{Computational Complexity} \\ 
+        \midrule
+        Compute Hessian + $H_k d$ & $O(Nd^2 + d^2)$ \\
+        Sequential multiplication & $O(Nd)$ \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Yet, this is in terms of a concrete example, and we may want a more general approach.
+
+\subsection{Finite difference differentiation}
+
+Pretty much all such schemes are base on a Taylor expansion. The first one: 
+\begin{align*}
+    f(x + \varepsilon d) &= f(x) + \nabla f(x)^T \varepsilon d + \mathcal{O}(\varepsilon^2) \\ 
+    \nabla f(x)^T d &= \frac{f(x + \varepsilon d) - f(x)}{\varepsilon} + \mathcal{O}(\varepsilon) \\
+    \nabla^2 f(x) d &= \frac{\nabla f(x + \varepsilon d) - \nabla f(x)}{\varepsilon} + \mathcal{O}(\varepsilon)
+\end{align*}
+
+On the lecture at this moment there was some reasoning on how an optional $\varepsilon$ may be obtained and which precision we will then get. In the first scheme we got something approx. 2 times worse than machine precision, like $10^{-8}$. 
+
+The second option is to do as follows:
+\begin{align*}
+    f(x + \varepsilon d) &= f(x) + \nabla f(x)^T \varepsilon d + \frac{1}{2} d^T \nabla^2 f(x) d \varepsilon^2 + \mathcal{O}(\varepsilon^3) \\
+    f(x - \varepsilon d) &= f(x) - \nabla f(x)^T \varepsilon d + \frac{1}{2} d^T \nabla^2 f(x) d \varepsilon^2 + \mathcal{O}(\varepsilon^3) \\
+    \nabla f(x)^T d &= \frac{f(x + \varepsilon d) - f(x - \varepsilon d)}{2 \varepsilon} + \mathcal{O}(\varepsilon^2) \\
+\end{align*}
+Again some intuitions on the precision. We get better precision (like $10^{-12}$) than in the first scheme, but it requires more computations.
+
+The third scheme unites benifits of the previous two. $i$ is an imaginary unit.
+\begin{align*}
+    f(x + i \varepsilon d) &= f(x) + \nabla f(x)^T d i \varepsilon - \frac{1}{2} d^T \nabla^2 f(x) d \varepsilon^2 + i \mathcal{O}(\varepsilon^3) \\
+    \nabla f(x)^T d &= \frac{\operatorname{Im}{(f(x + i \varepsilon d))}}{\varepsilon} + \mathcal{O}(\varepsilon^2) \\
+    \nabla^2 f(x) d &= \frac{\operatorname{Im}{(\nabla f(x + i \varepsilon d))}}{\varepsilon} + \mathcal{O}(\varepsilon)
+\end{align*}
+
+Here we do not require many computations and get the best precision --- $10^{-16} =: \varepsilon_m$. So it is actually the exact solution.
+
+\subsection{Convex sets}
+
+\begin{conj}
+    Set $Q$ is convex if $\forall x, y \in Q \quad \forall \alpha \in (0, 1) \quad \alpha x + (1 - \alpha) y \in Q$.
+\end{conj}
+
+\emph{Standard convex sets:}
+\begin{enumerate}
+    \item Empty set, sets of one element.
+    \item $Q = \{ x \in \R^n \mid a_i^T \leqslant b_i, i \in I \}$
+    \item $Q = \{ x \in \R^n \mid \norm{x - a} \leqslant r \}$ --- Ball.
+    \item Convex cones. 
+\end{enumerate} 
+
+\begin{conj}
+    Q is a convex cone if $\forall x, y \in Q \quad \forall \alpha, \beta \geqslant 0 \quad \alpha x + \beta y \in Q$.
+\end{conj}
+
+Which set operations preserve convexity?
+\begin{enumerate}
+    \item Intersection: $Q = \bigcap^m_{i=1} Q_i$, $Q_i$ is convex.
+    \item Image under affine transformation: $Q = \{ x \mid Ax + b \in Q_0 \}$, $Q_0$ is convex. 
+    \item Preimage of a convex set under affine transformation is convex.
+    \item Cortesian product of convex sets is convex: If $Q = Q_1 \times Q_2 \times \cdots \times Q_n$, $Q_i$ is convex, then $Q$ is convex.
+\end{enumerate}
+
+\begin{conj}
+    Convex hull of a set $S$ is the smallest convex set containing $S$: $\operatorname{Conv}{(S)} = \bigcap \{ Q \mid S \subseteq Q, Q \text{ is convex} \}$.
+\end{conj}
+
+\begin{theorem}
+    \[ 
+        x \in \operatorname{Conv}{(S)} \Longleftrightarrow x = \sum^m_{i=1} \alpha_i x_i, x_i \in S, \; \alpha_i \geqslant 0, \; \sum^m_{i=1} \alpha_i = 1
+    \]
+\end{theorem}
