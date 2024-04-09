@@ -1,0 +1,158 @@
+\section{Convex Functions}
+
+\begin{conj}
+    $U$ --- linear space on $\R$, $f: U \to \R, Q = \operatorname{dom} f \subseteq U$ --- convex set. $f$ is convex on $Q$ if $\forall x, y \in Q, \forall \alpha \in (0, 1), f(\alpha x + (1 - \alpha)y) \leq \alpha f(x) + (1 - \alpha)f(y)$.
+    If the inequality is strict, then $f$ is strictly convex, if $f(\alpha x + (1 - \alpha)y) \geq \text{ or } > \alpha f(x) + (1 - \alpha)f(y)$, then $f$ is concave or strictly concave. 
+\end{conj}
+
+\examples{}
+\begin{enumerate}
+    \item $f(x) = a^T x + b$
+    \item $f(x) = \abs{x}$
+    \item $f(x) = I_Q(x) = \begin{cases} 0, & x \in Q \\ +\infty, & x \notin Q \end{cases}$
+\end{enumerate}
+
+\textbf{Operations that preserve convexity:}
+\begin{enumerate}
+    \item $A : U \to V$ --- linear operator, $f: V \to \R$ --- convex, then $f \circ A$ is convex.
+    \item $f(x) = \sup_{i \in I} f_i(x)$, $f_i: U \to \R$ --- convex, then $f$ is convex.
+    \item $f_i: U \to \R$ --- convex, then $f(x) = \sum_{i=1}^n \alpha_i f_i(x)$ is convex, $\alpha_i \geq 0$.
+    \item $f(x) = g(f_1(x), \ldots, f_n(x))$, $g: \R^n \to \R$ --- convex and monotonically increasing, $f_i: U \to \R$ --- convex, then $f$ is convex.
+    \item $f(x, y)$ --- convex, then $g(x) = \inf_y f(x, y)$ is convex.
+\end{enumerate}
+
+\textbf{Some more examples:} 
+\begin{enumerate}
+    \item $\lambda_{\max} : S^n \to \R, \lambda_{\max} (A) = \max\limits_{x : \abs{x} = 1} x^T A x$ --- convex.
+    \item Input Convex Neural Networks. If the network is convex, with respect to the input, then the output is uniquely defined.
+\end{enumerate}
+
+\begin{theorem} (Differentiability of convex functions) \\
+    $f \in \mathcal{C}^1, f \text{ --- convex} \Longleftrightarrow \forall x, y f(y) \geqslant f(x) + \nabla f(x)^T (y - x)$.
+\end{theorem}
+
+\begin{theorem} (Differentiability of convex functions via 2d derivative) \\
+    $f \in \mathcal{C}^2, f \text{ --- convex} \Longleftrightarrow d^2 f(x) [dx, dx] \geqslant 0 \quad \forall x, dx$.
+\end{theorem}
+
+\begin{theorem} 
+    \[ 
+        f(x) = \log(\sum_i \exp(x_i)) \text{ --- convex} 
+    \] 
+\end{theorem}
+\begin{proof}
+\begin{align*}
+    &f(x) = \log(\sum_i \exp(x_i)) = \log(\exp(x)^T 1) \\ 
+    &df = \frac{1}{\exp(x)^T 1} 1^T \operatorname{diag} (\exp(x)) dx = \frac{\exp(x)^T dx}{\exp(x)^T 1}
+\end{align*}
+And the second derivative is:
+\begin{align*}
+    d^2 f &= \frac{(d x_1^T \operatorname{diag}(\exp(x)) dx_2) (\exp(x)^T 1) - \exp(x)^T dx_1 1^T \operatorname{diag}(\exp(x)) dx_2}{(\exp(x)^T 1)^2}
+\end{align*}
+Next you need to simplify and apply Cauchy–Schwarz inequality.
+\end{proof}
+
+\vspace{1em}
+
+We will here discuss some more properties of convex functions. 
+
+\begin{theorem} (Jensen's inequality) \\
+    \[
+        f(x) \text{ --- convex} \Longleftrightarrow \forall m \quad f(\sum\limits_{i=1}^m \alpha_i x_i) \leq \sum\limits_{i=1}^m \alpha_i f(x_i), \alpha_i \geq 0, \sum\limits_{i=1}^n \alpha_i = 1
+    \] 
+\end{theorem}
+\begin{proof}
+    From right to left you just take $m = 2$ and get the definition of convexity. From left to right you can use induction. Base of induction is $m = 2$ and is true by definition. Step of induction is:
+    \begin{align*}
+        f(\sum_{i=1}^{m+1} \alpha_i x_i) &= f(\alpha_{m+1} x_{m+1} + (1 - \alpha_{m+1}) \sum_{i=1}^m \frac{\alpha_i}{1 - \alpha_{m+1}} x_i) \\
+        &\leq \alpha_{m+1} f(x_{m+1}) + (1 - \alpha_{m+1}) f(\sum_{i=1}^m \frac{\alpha_i}{1 - \alpha_{m+1}} x_i) \\
+        &\leq \sum_{i=1}^{m+1} \alpha_i f(x_i)
+    \end{align*}
+\end{proof}
+
+\begin{conj}
+    \textbf{Epif} $ = \{(x, t) \mid f(x) \leq t\}$ --- Epigraph of $f$. Just the upper part of the graph of the function.
+\end{conj}
+
+\begin{theorem}
+    $f$ --- convex $\Longleftrightarrow$ \textbf{Epif} is convex.
+\end{theorem}
+
+\begin{theorem}
+    $f$ --- convex $\Longrightarrow \{ x \mid f(x) \leq t \}$ is convex.
+\end{theorem}
+
+Now say we have a minimization problem of the following form:
+\[ 
+    \begin{cases}
+        f(x) \to \min_x \\ 
+        g_i(x) \leq 0, \; i = 1, \ldots, m \\ 
+        h_j (x) = 0, \; j = 1, \ldots, p
+    \end{cases}
+\]
+
+Then: 
+\begin{align*}
+    h(x) = 0 &\Longleftrightarrow \begin{cases}
+        g_1 (x) = h(x) \leq 0 \\
+        g_2 (x) = -h(x) \leq 0
+    \end{cases} \\ 
+    h(x) = 0 &\Longleftrightarrow \hat{h}(x) = h^2 (x) = 0
+\end{align*}
+
+Notice that we can derive different inequality constraints and that is bad. 
+
+\begin{conj}
+    $f, g_i, h_j \in \mathcal{C}^1$. We will introduce a banch of notations for some sets: 
+    \begin{align*}
+        &F := \{ x \in \R^n \mid g_i(x) \leq 0 \forall i, h_j(x) = 0 \forall j \} \\
+        &\operatorname{Active}(x) := \{ i \in \{1, \ldots, m\} \mid g_i(x) = 0 \} \cup \{ j \in \{1, \ldots, p\} \mid h_j(x) = 0 \} \\
+        &L(x, \lambda, \mu) = f(x) + \sum_{i=1}^m \lambda_i g_i(x) + \sum_{j=1}^p \mu_j h_j(x)
+    \end{align*}
+\end{conj}
+
+\begin{theorem} (KKT)
+    $f, g_i, h_j \in \mathcal{C}^1, x_0$ --- local minimum, at $x_0$ some regularity conditions are satisfied. Then $\exists \lambda_0, \mu_0$ such that:
+    \begin{enumerate}
+        \item $\nabla_x L(x_0, \lambda_0, \mu_0) = \nabla_x f(x_0) + \sum_{i=1}^m \lambda_{0i} \nabla_x g_i(x_0) + \sum_{j=1}^p \mu_{0j} \nabla_x h_j(x_0) = 0$ (Stationarity of the Lagrange function)
+        \item $x_0 \in F$ (Primal feasibility)
+        \item $\lambda_0 \geq 0$ (Dual feasibility)
+        \item $\lambda_{0i} g_i(x_0) = 0$ (Complementary slackness)
+    \end{enumerate}
+\end{theorem}
+
+Дальше до конца лекции будет идти обсуждение доказательства этой теоремы. Очень уж неформальное, очень сумбурное, очень сложно конспектируемое. Тут будут какие то попытки уловить куски здравого смысла, но я очень быстро сдался.
+
+\subsubsection{Constraints qualification}
+\begin{enumerate}
+    \item (LCQ) $g_i, h_j$ are non-degenerate affine functions. $g_i(x) = a^T_i x + b_i, a_i \neq 0$
+    \item (LICQ) $\{ \nabla g_i(x_0), \nabla h_j(x_0) \mid i, j \in \operatorname{Active}(x_0) \}$ are linearly independent.
+    \item (Slater) For convex opptimization problems $\exists \tilde{x} \in F : g_i(\tilde{x}) < 0 \forall i$.
+    \item (Weak Slater) For convex opptimization problems $\exists \tilde{x} \in F : g_i(\tilde{x}) \leq 0 \; \forall \text{ affine functions and } g_i(\tilde{x}) < 0 \;  \forall \text{ other}$ 
+\end{enumerate}
+
+\emph{Genaral case:} 
+We have a multi constraint optimization problem: 
+\[ 
+    \begin{cases}
+        f(x) \to \min_x \\ 
+        g_i(x) \leq 0, \; i = 1, \ldots, m \\ 
+        h_j (x) = 0, \; j = 1, \ldots, p
+    \end{cases}
+\] 
+Then: 
+\begin{gather*}
+    T_F(x_0) = \{ d \mid \nabla g_i(x_0)^T d \leq 0, \forall i, \nabla h_j(x_0)^T d = 0, \forall j \} \\
+    \nabla f (x_0)^T d \geq 0, \forall d \in T_F(x_0) \\ 
+    K := \{ B y + C w \mid y \geq 0 \} \text{ --- convex cone} \\
+    B \in \R^{n \times m}, y \in \R^m, C \in \R^{n \times p}, w \in \R^p \\
+\end{gather*}
+
+
+\begin{lemma} (Farkas)
+    $\forall g$ either: 
+    \begin{enumerate}
+        \item $g \in K$
+        \item $\exists d \in \R^n : g^T d < 0, B^T d \geq 0, C^T d = 0$
+    \end{enumerate}
+\end{lemma}
