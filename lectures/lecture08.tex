@@ -1,0 +1,230 @@
+\section{Lection number undefined}
+
+Recall that we study the following problem: 
+
+\begin{equation*}
+    \begin{cases}
+        f(x) \to \min_x, \\ 
+        g_i(x) \leq 0, \forall i = 1, \ldots, m, \\ 
+        h_j(x) = 0, \forall j = 1, \ldots, p.
+    \end{cases}
+\end{equation*}
+
+with  
+
+\begin{equation*}
+    \begin{aligned}
+        L (x, \lambda, \mu) &:= f(x) + \sum_{i = 1}^m \lambda_i g_i(x) + \sum_{j = 1}^p \mu_j h_j(x); \\
+        F &:=  \{x \in \RR^n | g_i(x) \leq 0, h_j(x) = 0 \forall i, j \}; \\ 
+        T_F(x) &:= \{d \in \RR^n | \nabla g_i(x) d \leq 0, \nabla h_j(x) d = 0 \forall i, j \in \operatorname{Active}(x) \}; \\ 
+        C(x, \lambda) &:= \{ d \in T_F(x) | \nabla g_i (x)^T d = 0 \text{if} \lambda_i > 0 \}.
+    \end{aligned}
+\end{equation*}
+
+\begin{lemma}[Necessary conditions]
+    $x$ is a local minimum and regularity condition holds then $\exists \lambda, \mu$ such that 
+    \begin{enumerate} 
+        \item $\nabla_x L(x, \lambda, \mu) = 0$; 
+        \item $x \in F$;
+        \item $\lambda_i \geq 0 \forall i$;
+        \item $\lambda_i g_i(x) = 0 \forall i$; 
+        \item $d^T \nabla^2_{xx} L(x, \lambda, \mu) d \geq 0 \forall d \in C(x, \lambda)$.
+    \end{enumerate}
+\end{lemma} \ 
+
+\begin{lemma}[Sufficient condition]
+    Regularity condition holds for $(x, \lambda, \mu)$, 1-4 hold and the fifth changes to
+    \begin{equation*}
+        \begin{aligned}
+            d^T \nabla^2_{xx} L(x, \lambda, \mu) d > 0 \forall d \in C(x, \lambda).
+        \end{aligned}
+    \end{equation*}
+    hence, $x$ is a local minimum.
+\end{lemma} \ 
+
+And finally: 
+
+\begin{lemma}[Regularity conditions]
+    \begin{enumerate}
+        \item LCQ: $g_i(x) = a_i^T + b$, $a_i \neq 0$; 
+        \item LICQ: $\{\nabla g_i(x), \nabla h_j(x) \vert i, j \in \operatorname{Active}(x)\}$ are linearly independent;
+        \item Slater: for convex optimization problems $\exists \widetilde{x} : g_i(\widetilde{x}) < 0 \forall i, h_j(\widetilde{x}) = 0 \forall j$;
+        \item Weak Slater: for convex opt. problems $\exists \widetilde{x} : g_i(\widetilde{x}) < 0, g_i(\widetilde{x}) \leq 0 \text{ for affine } g_i, h_j(\widetilde{x}) = 0$.
+    \end{enumerate}
+\end{lemma}
+
+\begin{eexl}
+    Let's assume 
+    \begin{equation*}
+        \begin{cases}
+            x^2 - y^2 \to \min, \\
+            x^2 + y^2 \leq 1.
+        \end{cases}
+    \end{equation*}
+
+    Then we can write
+    \begin{equation*}
+        \begin{aligned}
+            L(x, \lambda) &= x^2 - y^2 + \lambda (x^2 + y^2 - 1).
+        \end{aligned}
+    \end{equation*}
+
+    And hence, 
+    \begin{equation*}
+        \begin{aligned}
+            \frac{\partial L}{\partial x} &= 2x + 2 \lambda x = 2x(1 + \lambda) = 0; \\
+            \frac{\partial L}{\partial y} &= -2y + 2 \lambda y = 2y(1 - \lambda) = 0; \\ 
+            x^2 + y^2 &\leq 1, \lambda \geq 0; \\ 
+            \lambda (x^2 + y^2 - 1) &= 0.
+        \end{aligned}
+    \end{equation*}
+
+    if $\lambda = 0$, then $x = 0, y = 0$ and $x^2 + y^2 = 0 \leq 1$. If $\lambda > 0$, then  
+
+    Let's compute Hessian: 
+    \begin{equation*}
+        \begin{aligned}
+            \nabla^2 L = 
+            \begin{pmatrix}
+                2(1 + \lambda) & 0 \\ 
+                0 & -2(1 - \lambda)
+            \end{pmatrix}.
+        \end{aligned}
+    \end{equation*}
+
+    if $x = y = \lambda = 0$, then $\nabla^2 L = \begin{pmatrix} 2 & 0 \\ 0 & -2 \end{pmatrix}$,
+
+    \begin{equation*}
+        \begin{aligned}
+            T_F (x = y = 0) &= \{d \in \RR^2 | \nabla g_i(x) d \leq 0 \forall i, \nabla h_j(x) d = 0 \forall j\} = \RR^2; \\ 
+            C(x = y = 0, \lambda = 0) &= \{d \in \RR^2 | \nabla g_i(x)^T d = 0 \text{ if } \lambda_i > 0\} = \RR^2.
+        \end{aligned}
+    \end{equation*}
+
+    Hence, $x = y = 0$ is not a local minimum. 
+
+    If $\lambda = 1$, $x = 0$, $y = 1$ we have $\nabla^2 L = \begin{pmatrix} 4 & 0 \\ 0 & 0 \end{pmatrix}$,
+
+    \begin{equation*}
+        \begin{aligned}
+            T_F (x = 0, y = 1) &= \{d \in \RR^2 | \nabla g(x, y)^T d = 2x d_1 + 2y d_2 = g(x, y) = x^2 + y^2 - 1 = 2d_2 \leq 0 \} ; \\ 
+            C(x = 0, y = 1, \lambda = 1) &= \{d \in \RR^2 | \nabla g(x, y)^T d = 2d_2 = 0 \}.
+        \end{aligned}
+    \end{equation*}
+
+    Hence, $d^T \nabla^2 L d = 4 d_1^2 >0$ $\forall d \in C(x, \lambda)$, hence $x = 0, y = 1$ is a local minimum.
+\end{eexl}
+
+\begin{eexl}
+    Let's assume 
+    \begin{equation*}
+        \begin{cases}
+            c^T x \to \min_{x \in\RR}, \\
+            a^T x \leq b.
+        \end{cases}
+    \end{equation*}
+
+    LCQ holds, so let us write Lagrangian:
+
+    \begin{equation*}
+        \begin{aligned}
+            L(x, \lambda) = c^T x + \lambda (a^T x - b).
+        \end{aligned}
+    \end{equation*}
+
+    Hence, the conditions are
+
+    \begin{equation*}
+        \begin{aligned}
+            \nabla_x L = c + \lambda a = 0; \\ 
+            a^T x \leq b, \lambda \geq 0; \\ 
+            \lambda (a^T x - b) = 0.
+        \end{aligned}
+    \end{equation*}
+
+    If $\lambda = 0$, then $c = 0$, hence $\forall x$ $a^T \leq b$. 
+
+    If $\lambda > 0$, then $a^T x = b$, hence $c = - \lambda a \Leftrightarrow c \uparrow \downarrow a$, hence $\forall x: a^T x = b$. 
+\end{eexl}
+
+\begin{eexl}
+    Let's assume 
+    \begin{equation*}
+        \begin{cases}
+            \det X \to \max_{x \in S_{++}^n}; \\ 
+            \langle A, X \rangle \leq b, A \in S_{++}^{n}, b > 0.
+        \end{cases}
+    \end{equation*}
+
+    Lagrangian is
+    \begin{equation*}
+        \begin{aligned}
+            L(X, \lambda) &= -\det X + \lambda (\tr A^T X - b); 
+            dL = -\det X \tr X^{-1} dX + \lambda \tr A^T dX.
+        \end{aligned}
+    \end{equation*}
+
+    and the conditions are
+    \begin{equation*}
+        \begin{aligned}
+            \nabla_X L = -\det X X^{-1} + \lambda A = 0; \\ 
+            \tr( A^T X ) \leq b, X \in S_{++}^n; \\  
+            \lambda \geq 0; \\ 
+            \lambda (\tr A^T X - b) = 0.
+        \end{aligned}
+    \end{equation*}
+
+    if $\lambda = 0$, $X^{-1} = \frac{\lambda}{\det X} A $ 
+
+    \begin{center}
+        \Huge{СМЕРТЬ}
+    \end{center}
+\end{eexl}
+
+\begin{eexl}[DeepFool adversarial attack]
+    Let's assume that we have a neural network $f(x)$ and $k(x) = \operatorname{sign} f(x)$, where $k(x)$ is the class of $x$. Then we can take a look at $\operatorname{sign} f(x_0 + r) \neq k(x_0)$, where $r$ is a small perturbation. And let's assume the following problem: 
+
+    \begin{equation*}
+        \begin{cases}
+            \frac{1}{2} ||r||^2 \to \min_r, \\  
+            f(x_0 + r) = 0.
+        \end{cases}
+    \end{equation*}
+
+    The latter condition can be written as $f(x_0) + \nabla_x f(x_0)^T r = 0$, and let's write the Lagrangian:
+    
+    \begin{equation*}
+        \begin{aligned}
+            L(r, \mu) = \frac{1}{2} ||r||^2 + \mu (f(x_0) + \nabla_x f(x_0)^T r).
+        \end{aligned}
+    \end{equation*}
+
+    The conditions are
+    \begin{equation*}
+        \begin{aligned}
+            \nabla_r L = r + \mu \nabla_x f(x_0) = 0; \\ 
+            \Rightarrow r = -\mu \nabla_x f(x_0); \\
+            f(x_0) + \nabla_x f(x_0)^T r = 0.
+        \end{aligned}
+    \end{equation*}
+
+    Hence, 
+    \begin{equation*}
+        \begin{aligned}
+            f(x_0) - \mu ||\nabla_x f(x_0)||^2 = 0 \Rightarrow \mu = \frac{f(x_0)}{||\nabla_x f(x_0)||^2}.
+        \end{aligned}
+    \end{equation*}
+
+    and the perturbation is
+    \begin{equation*}
+        \begin{aligned}
+            r_{\operatorname{opt}} = -\frac{f(x_0)}{||\nabla_x f(x_0)||^2} \nabla_x f(x_0).
+        \end{aligned}
+    \end{equation*}
+\end{eexl}
+
+\begin{eexl}[Multi-concept Text-to-image Diffusion model]
+    Let's suppose we have a model which generates images from text descriptions. And we want to include some specific things in the image (for example, our specific dog). Then we add a little amount of our dog's images to the dataset and train the model. The problem is that the model can overfit to the specific dog and generate only this dog.
+\end{eexl}
+
+НЕ ДОПИСАНО

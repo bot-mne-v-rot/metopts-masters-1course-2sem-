@@ -1,0 +1,295 @@
+\section{Constraints for KKT on computer}
+
+\[ 
+    A x = b 
+\] 
+
+To get one solution of such system on computer, we may run some basic iterative algorithm. But what do we do to find a general solution? We can decompose the matrix $A = L U$, where $L$ --- lower triangular, $U = p[u_1 \mid u_2]$ where $u_1$ has dimensionality $p \times p$ and is upper triangular and $u_2$ is a $p \times n - p$ size matrix. 
+
+Then: 
+\[ 
+    x_1 = U_1^{-1} L^{-1} (b - L u_2 x_2) = u_1^{-1} L^{-1} b - u_1^{-1} u_2 x_2 
+\] 
+
+And then the general solution: 
+\[ 
+    x = \begin{bmatrix}
+        x_1 \\ 
+        x_2
+    \end{bmatrix} = \stackbelow{\begin{bmatrix}
+        u_1^{-1} L^{-1} b \\ 
+        0 
+    \end{bmatrix}}{\hat{x}} + \stackbelow{\begin{bmatrix}
+        -u_1^{-1} u_2 \\ 
+        I
+    \end{bmatrix}}{Z} x_2
+\] 
+Meaning that we optimize: 
+\[ 
+    f(\hat{x} + Z x_2) \to \min_{x_2}
+\] 
+
+Why this method is not very good? Because the complexity will be high for big matrices. 
+
+We want to get rid of matrix decompositions. 
+
+\[ 
+    x_{k+1} = x_k + \alpha_k d_k
+\] 
+
+Say we start with some feasible point $x_0 \in F$, then: 
+\[ 
+    A x_0 = b \longrightarrow x_1 \in F \longrightarrow \ldots
+\]
+Then: 
+\[ 
+    f(x_k + d) \approx m_k(d) = f(x_k) + \nabla f(x_k)^T d + \frac{1}{2} d^T B_k d \to \min_d
+\] 
+And 
+\[ 
+    A(x_k + d) = b \Longrightarrow A d = 0
+\] 
+Thus: 
+\begin{align*}
+    L(d, \mu) &= f(x_k) + \nabla f(x_k)^T d + \frac{1}{2} d^T B_k d + \mu^T A d \\ 
+    \nabla_d L &= \begin{cases}
+        \nabla f(x_k) + B_k d + A^T \mu = 0 \leftarrow \text{KKT} \\
+        A d = 0
+    \end{cases}
+\end{align*}
+We conclude a system: 
+\begin{gather*}
+    \begin{bmatrix}
+        B_k & A^T \\ 
+        A & 0
+    \end{bmatrix} \cdot \begin{bmatrix}
+        d \\ 
+        \mu
+    \end{bmatrix} = \begin{bmatrix}
+        -\nabla f(x_k) \\ 
+        0
+    \end{bmatrix}
+\end{gather*}
+
+We want our step size $\alpha_k$ to be a feasible point.
+\[ 
+    A(x_k + \alpha_k d_k) = \stackbelow{A x_k}{b} + \alpha_k \stackbelow{A d_k}{0} = b \; \forall \alpha_k
+\] 
+
+Let's sketch the algorithm:
+\begin{enumerate}
+    \item We start from some feasible point 
+    \item We solve a linear system 
+    \item We get a direction of optimization
+    \item Using Wolfe conditions we get a step size
+    \item We get a new point
+    \item Now how do we now when to stop? 
+\end{enumerate}
+
+\begin{align*}
+    L(x, \mu) &= f(z) + \mu^T (A x - b) \\ 
+    \nabla_x L &= \begin{cases}
+        \nabla f(x) + A^T \mu = 0 \leftarrow \text{KKT} \\ 
+        A x = b
+    \end{cases}
+\end{align*}
+
+So we can use the following as the stopping criterion:
+\[ 
+    \norm{\nabla f(x_{k+1}) + A^T \mu_{k}}^2 \leq \varepsilon
+\] 
+
+But we were solving not a general case of the problem. We had only equality constraints. Now let's consider the general case.
+
+\[ 
+    \begin{cases}
+        f(x) \to \min_x \\
+        g_i(x) \leq 0, \; i = 1, \ldots, m \\
+        A x = b, A \in R^{p \times n}, p < n, \operatorname{rank} A = p
+    \end{cases}
+\] 
+
+Consider an indicator function:
+\[ 
+    I(u) = \begin{cases}
+        0, \; u \leq 0 \\ 
+        \infty, \; u > 0
+    \end{cases}
+\] 
+
+The problem is reformulated as:
+\[ 
+    \begin{cases}
+        f(x) + \sum_{i=1}^m I(g_i(x)) \to \min_x
+        A x = b
+    \end{cases}
+\]
+
+We might want to apply our previous algorithm to this problem. But we can't because the indicator function is not differentiable. And we can not compute gradient nor hessian. 
+
+The thing people usually do is to approximate the indicator function with a smooth function.
+
+\[ 
+    I_{\tau} (u) = - \frac{1}{\tau} \log{(-u)} \quad \tau > 0
+\]
+
+And then the problem could be reformulated as:
+\[ 
+    \begin{cases}
+        f(x) - \frac{1}{\tau} \sum_{i=1}^m \log{(-g_i(x))} \to \min_x \quad x : g_i(x) < 0 \; \forall i \\
+        A x = b 
+    \end{cases}
+\] 
+
+We are going to solve this optimization problem for some $\tau$. Yet, what $\tau$ should we choose? Say we want to find the $\varepsilon$ estimation of the original problem. If we fix that $\varepsilon$, we can figure out the specific $\tau$, for which we should solve the reformulated problem to get a solution with the accuracy of $\varepsilon$.
+
+We are going to use the central path algorithm:
+\[ 
+    \{ \hat{x}(\tau), \hat{\mu} \mid \tau > 0 \} \text{ --- central path}
+\] 
+Firstly, we will take some interior positive tau, compute the auxiliary problem, and then increase the value of $\tau$ and solve the problem again, taking the previous solution as the initial point for $x$. 
+
+To get an estimation of how good is our solution, we need to compute the KKT theorem for both the original and the auxiliary problem.
+
+We need to compare the gradient of the Lagrange function for both problems.
+
+For the auxiliary problem:
+\begin{gather*}
+    L_\tau (x, \mu) = f(x) - \frac{1}{\tau} \sum_{i=1}^m \log{(-g_i(x))} + \mu^T (A x - b) \\
+    \nabla_x L_\tau (\hat{x}(\tau), \hat{\mu}) = \nabla f(\hat{x}) - \frac{1}{\tau} \sum_{i=1}^m \frac{1}{g_i(\hat{x})} \nabla g_i(\hat{x}) + A^T \hat{\mu} = 0
+\end{gather*}
+
+For the original problem:
+\begin{gather*}
+    L(x, \mu, \lambda) = f(x) + \sum_{i=1}^m \lambda_i g_i(x) + \mu^T (A x - b) \\
+    \nabla_x L(x, \mu, \lambda) = \nabla f(x) + \sum_{i=1}^m \lambda_i \nabla g_i(x) + A^T \mu = 0
+\end{gather*}
+
+\[ 
+    \hat{\lambda}_i(\tau) = - \frac{1}{\tau g_i (\hat{x}(\tau))} \quad \forall i
+\] 
+
+For $(\hat{x}(\tau), \hat{\mu}(\tau), \hat{\lambda}(\tau))$ the following is true: 
+\begin{enumerate}
+    \item $\nabla_x L(\hat{x}, \hat{\mu}, \hat{\lambda}) = 0$ 
+    \item $\hat{x} \in F$ 
+    \item $\hat{\lambda_i} > 0 \; forall i$ 
+    \item $\hat{\lambda_i} g_i (\hat{x}) = - \frac{1}{\tau} \; \forall i$
+\end{enumerate}
+
+This is almost the KKT criterion for the initial theorem, but for non-zero value, but for the value that only tends to zero ($\frac{1}{\tau}$). 
+
+The particular estimate is: Solving auxiliary problem with parameter $\tau$ is equivalent to solving the original problem with precision $\frac{m}{\tau}$. This estimation could be not haradly deduced. 
+
+The complete algorithm: 
+
+\begin{algorithm}
+    \caption{Log-barrier method (Primal IPM)}
+    \begin{algorithmic}[1]
+    \State{$x_0 : g_i(x_0) \forall i$}
+    \State{$\varepsilon$}
+    \State{$\hat{\tau_0}$}
+    \State{$\gamma \gets > 0$}
+    \While{$\tau_k < \frac{m}{\varepsilon}$}
+        \State{Find $\hat{x}(\tau_k)$ as a solution}
+        \State{$\begin{cases}
+            f(x) - \frac{1}{\tau_k} \sum_i \log(-g_i(x)) \to \min_x \\ 
+            A x = b
+        \end{cases}$}
+        \State{Starting from $x_k$}
+        \State{$x_{k+1} \gets \hat{x}(\tau_k)$}
+        \State{$\tau_{k+1} \gets \min{(\frac{m}{\tau}, \tau_k \cdot \gamma)}$}
+    \EndWhile{}
+    \end{algorithmic}
+\end{algorithm}
+
+\section{Standard classes of convex constraint optimization}
+
+\begin{enumerate}
+    \item LP\: $\begin{cases}
+        c^T x \to \min_x \\ 
+        A x = b \\ 
+        E x = f 
+    \end{cases}$
+    \item QP\: $\begin{cases}
+        \frac{1}{2} x^T A x - x^T b \to \min_x, \; A \in S^n_+ \\
+        C x \leq d \\
+        E x = f
+    \end{cases}$
+    \item QCQP\: $\begin{cases}
+        \frac{1}{2} x^T A x - x^T b \to \min_x \\
+        \frac{1}{2} P_i x - x^T q_i \leq r_i \\ 
+        E x = f
+    \end{cases}$
+    \item SOCP\: $\begin{cases}
+        c^T x \to \min_x \\ 
+        E x = f \\ 
+        \norm{P_i x + q_i}_2 \leq c_i^T x + d_i, \; i = 1, \ldots, m
+    \end{cases}$
+    \item SDP\: $\begin{cases}
+        c^T x \to \min_x \\
+        x_1 A_1 + \ldots + x_n A_n + B \leq 0
+        E x = f 
+    \end{cases}$
+\end{enumerate}
+
+\begin{lemma}
+    \[ 
+        LP \subset QP \subset QCQP \subset SOCP \subset SDP
+    \] 
+\end{lemma}
+\begin{proof}
+    Some of inclusions are evident. We will discuss the rest.
+    
+    Let's prove that $QCQP \subset SOCP$: 
+    \begin{align*}
+        \frac{1}{2} x^T P_i x - x^T q_i \leq r_i &= \frac{1}{2} x^T P_i^{1/2} P_i^{1/2} x - x^T P_i^{1/2} P_i^{-1/2} q_i \\
+        &\leadsto \frac{1}{2} \norm{P_i^{1/2} x - P_i^{-1/2} q_i}_2^2 - \frac{1}{2} q_i P_i^{-1/2} P_i^{-1/2} q_i \leq r_i \\ 
+        &\Longleftrightarrow \norm{P_i x - P_i^{1/2} q_i}_2 \leq (2 r_i - q_i P_i^{-1} q_i)^{1/2}
+    \end{align*}
+
+    Okay, now let's show that $SOCP \subset SDP$:
+    Боюсь придется поверить.
+\end{proof}
+
+\subsection{Converging problems to other classes}
+
+Suppose such kind of an optimization problem: 
+\[ 
+    \begin{cases}
+        f(x) \to \min_x \\
+        x_i \geq 0, \; \sum x_i = 1
+    \end{cases}
+\] 
+
+General idea is to reparametrize it to some problem for which we have an efficient optimizer. We can reparametrize $x$ with a softmax function:
+\[ 
+    x_i = \frac{\exp{y_i}}{\sum \exp{y_i}}
+\]
+
+And solve an unconstrained optimization problem:
+\[ 
+    f(\operatorname{softmax}(y)) \to \min_y
+\]
+
+Say we now have a problem:
+\[ 
+    \begin{cases}
+        f(x) \to \min_x \\ 
+        \norm{x}^2_2 \leq r
+    \end{cases}
+\] 
+
+We can reparametrize it as:
+\[ 
+    x = p r_{\norm{x}^2 \leq r} (y) = \begin{cases}
+        y, \text{ if } \norm{y}^2 \leq r \\
+        \frac{y}{\norm{y}} \sqrt{r}, \text{ otherwise}
+    \end{cases}
+\]
+
+And solve: 
+\[ 
+    f(p r(y)) \to \min_y
+\]
+

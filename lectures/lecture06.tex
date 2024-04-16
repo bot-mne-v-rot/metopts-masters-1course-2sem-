@@ -1,0 +1,191 @@
+\section{Quasi-Newton approach}
+
+Today we're going to learn \emph{Quasi-Newton approach} (which would later lead us to L-BFGS -- something very important). Starting with usual problem $f(x) \to \min_{x \in \RR^n}$, and we are trying to approximate 
+
+\begin{equation*}
+    \begin{aligned}
+        f(x_k + d) \approx m_k(d) = f(x_k) + \nabla f(x_k)^T d + \frac{1}{2} d^T B_k d
+    \end{aligned}
+\end{equation*}
+
+where $B_k$ is a symmetric positive definite matrix. 
+
+\begin{equation*}
+    \begin{aligned}
+        \nabla m_k(d) &= \nabla f(x_k) + B_k d = 0 \Rightarrow d = -B_k^{-1} \nabla f(x_k) \\ 
+        x_{k+1} &= x_k + \alpha_k d = x_k - \alpha_k B_k^{-1} \nabla f(x_k)
+    \end{aligned}
+\end{equation*}
+
+so we can require the following conditions:
+
+\begin{conj}[Secant conditions]
+    \begin{equation*}
+        \begin{aligned}
+            \begin{cases}
+                \nabla m_{k+1}(0) = \nabla f(x_{k+1}) \\ 
+                \nabla m_{k+1}(-\alpha_k d_k) = \nabla f(x_k)
+            \end{cases}
+        \end{aligned}
+    \end{equation*}
+\end{conj}
+
+as we can observe
+
+\begin{equation*}
+    \begin{aligned}
+        \nabla m_{k+1}(0) &= \nabla f(x_k) + B_{k+1} 0 = \nabla f(x_{k+1}) \\
+        \nabla m_{k+1}(-\alpha_k d_k) &= \nabla f(x_k) + B_{k+1} (-\alpha_k d_k) = \nabla f(x_k) \Leftrightarrow \\ 
+        &\nabla f(x_{k+1} - x_k) = B_{k+1}(\alpha_k d_k) = B_{k+1} (x_{k+1} - x_k) 
+    \end{aligned}
+\end{equation*}
+
+hence, we can define the following:
+
+\begin{equation*}
+    \begin{aligned}
+        s_k &= x_{k+1} - x_k \\ 
+        y_k &= \nabla f(x_{k+1}) - \nabla f(x_k) \\ 
+        y_k &= B_{k+1} s_k 
+    \end{aligned}
+\end{equation*}
+
+and formulate the main idea behind QN methods: $$B_{k+1} = B_k + \texttt{low\_rank\_update}(B_k, s_k, y_k)$$
+
+\subsection{Symmetric Rank 1 update}
+
+\begin{equation*}
+    \begin{aligned}
+        B_{k+1} &= B_k + \sigma_k v_k v_k^T \\ 
+        B_{k+1} s_k &= B_k s_k + \sigma_k v_k v_k^T s_k = y_k \Rightarrow \\ 
+        &\Rightarrow v_k = \gamma_k (y_k - B_k s_k),
+    \end{aligned}
+\end{equation*}
+
+where $\gamma_k = v_k^T s_k$. Hence, 
+
+\begin{equation*}
+    \begin{aligned}
+        \sigma_k \gamma_k^2 (y_k &- B_k s_k) (y_k - B_k s_k)^T s_k = y_k - B_k s_k \Rightarrow \\
+        &\Rightarrow \sigma_k \gamma_k^2 (y_k - B_k s_k)^T s_k = 1 \Rightarrow \\ 
+        &\Rightarrow \sigma_k \gamma_k^2 = \frac{1}{(y_k - B_k s_k)^T s_k}
+    \end{aligned}
+\end{equation*}
+
+which leads us to 
+
+\begin{equation*}
+    \boxed{B_{k+1} = B_k + \frac{(y_k - B_k s_k)(y_k - B_k s_k)^T}{(y_k - B_k s_k)^T s_k}}
+\end{equation*}
+
+and
+
+\begin{equation*}
+    \begin{aligned}
+        C_{k+1}^{SR1} &= \left( B_{k+1}^{SR1} \right)^{-1} = \left( B_k + \frac{(y_k - B_k s_k)(y_k - B_k s_k)^T}{(y_k - B_k s_k)^T s_k} \right)^{-1} = \\ 
+        &= B_k^{-1} - B_{k}^{-1}(y_k - B_k s_k) \left[(y_k - B_k s_k)^T s_k + (y_k - B_k s_k)^T B_k^{-1} (y_k - B_k s_k)\right]^{-1} + \\ 
+        &+ (y_k - B_k s_k)^T B_k^{-1} = C_k + \frac{(C_k y_k - s_k)(C_k y_k - s_k)^T}{y_k^T (s_k - C_k y_k)}
+    \end{aligned}
+\end{equation*}
+
+The memory cost is $O(n^2)$, and the computational cost is $O(n^2)$. The memory cost is quite high, so the method is rarely used in practice. A couple on notes: while updating $C_k$ we want it to be positive definite, which is true if the additional term is positive definite. That is not always true, so we can yse the following trick, skipping the update if the additional term is not positive definite: 
+
+\begin{equation*}
+    \begin{aligned}
+        C_{k+1}^{SR1} &= 
+        \begin{cases}
+            C_k , &\text{if} \quad y_k^T(s_k - C_k y_k) \leq \rho ||s_k - C_k y_k|| ||y_k||, \quad \rho = 10^{-8} \\ 
+            C_k + \ldots, &\text{otherwise}
+        \end{cases}
+    \end{aligned}
+\end{equation*}
+
+and one more thing that we initialize $C_0 = \frac{y_0^T s_0}{y_0^T y_0} I$. Still, we have the following problems: memory cost and the fact that we cannot guarantee that the update is positive definite.
+
+\subsection{BFGS update}
+
+Let's consider not rank-1 update, but rank-2 update. 
+
+\begin{equation*}
+    \begin{aligned}
+        B_{k+1} &= J_{k+1} J_{k+1}^T \\ 
+        B_{k+1} s_k &= J_{k+1} \underbrace{J_{k+1}^T s_k}_{u_k} = y_k \Leftrightarrow \\
+        &\begin{cases}
+            J_{k+1} u_k = y_k \\ 
+            J_{k+1}^T s_k = u_k
+        \end{cases}
+    \end{aligned}
+\end{equation*}
+
+so we can solve the following problem:
+
+\begin{equation*}
+    \begin{aligned}
+        \min_{J_{k+1}, u_k} ||J_{k+1} - J_k||^2 \quad \text{s.t.} \quad J_{k+1} u_k = y_k, \quad J_{k+1}^T s_k = u_k
+    \end{aligned}
+\end{equation*}
+
+which can be represented as 
+
+\begin{equation*}
+    \begin{aligned}
+        L(J_{k+1}, \lambda) &= ||J_{k+1} - J_k||^2_F + \lambda^T (J_{k+1} u_k - y_k) \\ 
+        &\begin{cases}
+            \nabla_{J_{k+1}} L (J_{k+1}, \lambda) = 0 \\
+            J_{k+1} u_k = y_k
+        \end{cases}
+    \end{aligned}
+\end{equation*}
+
+and the solution is
+
+\begin{equation*}
+    \begin{aligned}
+        J_{k+1} &= J_k - \frac{(J_k u_k - y_k) u_k^T}{u_k^T u_k}; \\
+        u_k &= \gamma_k J_k^T s_k; \\ 
+        \gamma_k &= \frac{y_k^T s_k}{s_k^T B_k s_k},
+    \end{aligned}
+\end{equation*}
+
+so we can obtain the following update:
+
+\begin{equation*}
+    \boxed{B_{k+1} = B_k - \frac{B_k s_k s_k^T B_k}{s_k^T B_k s_k} + \frac{y_k y_k^T}{y_k^T s_k}}
+\end{equation*}
+
+The computational cost is $O(n^2)$, and the memory cost is $O(n^2)$. And the final formula for the update is
+
+\begin{equation*}
+    \begin{aligned}
+        C_{k+1}^{BFGS} &= \left( I - \rho_k s_k y_k^T \right) C_k \left( I - \rho_k y_k s_k^T \right) + \rho_k s_k s_k^T, \\
+        \rho_k &= \frac{1}{y_k^T s_k} > 0
+    \end{aligned}
+\end{equation*}
+
+\subsection{L-BFGS}
+
+L here stands for limited memory. In BFGS we compute $C_k \nabla f_k$ using $\{s_i, y_i\}_{i = 0}^{k-1}$ starting from $C_0 = \frac{y_0^T s_0}{y_0^T y_0} I$. In L-BFGS we store only $m$ pairs $\{s_i, y_i\}_{i = k-m}^{k-1}$, and we use them to compute $C_k \nabla f_k$. And we start from $$C_0 = \frac{y_{k-1}^T s_{k-1}}{y_{k-1}^T y_{k-1}} I.$$ Let's try to take the update from BFGS and try to apply it to L-BFGS.
+
+\begin{equation*}
+    \begin{aligned}
+        r_k &= C_k \underbrace{\nabla f_k}_{q_k} = \left( I - \rho_{k-1} s_{k-1} y_{k-1}^T \right) C_{k-1} \left( I - \rho_{k-1} y_{k-1} s_{k-1}^T \right) q_{k} + \rho_{k} s_{k} s_{k}^T q_{k} = \\ 
+        &= \left( I - \rho_{k-1} s_{k-1} y_{k-1}^T \right) \underbrace{C_{k-1} (\underbrace{q_{k} - \rho_{k-1} y_{k-1} s_{k-1}^T q_{k}}_{q_{k - 1}})}_{r_{k-1}} + \rho_{k} s_{k} s_{k}^T q_{k} = \\
+        &= r_{k-1} -\rho_{k-1} s_{k-1} y_{k-1}^T r_{k-1} + \rho_{k} s_{k} s_{k}^T q_{k}
+    \end{aligned}
+\end{equation*}
+
+The process is following: first we compute $q_k$, then $q_{k-1}$ and so on untill we compute $q_{k-m}$. Then we compute $r_{k-m}$, then $r_{k-m+1}$ and so on untill we compute $r_k$.
+
+\begin{equation*}
+    \begin{aligned}
+        r_{k - m} = C_{k - m} q_{k - m} = C_0 q_{k - m} = \frac{y_{k-1}^T s_{k-1}}{y_{k-1}^T y_{k-1}} q_{k - m}
+    \end{aligned}
+\end{equation*}
+
+The computational cost is $O(mn)$, and the memory cost is $O(mn)$. Let's also quickly discuss the convergence rate of the methods we considered. Assuming that we are minimizing 
+
+\[ 
+    f(x) = \frac{1}{2} x^T A x - x^T b, \quad A > 0
+\]
+
+BFGS converges superlinearly, and L-BFGS converges linearly with a <<good>> constant.
