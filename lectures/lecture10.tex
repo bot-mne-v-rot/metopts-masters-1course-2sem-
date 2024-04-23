@@ -1,0 +1,218 @@
+\section{Smooth non-linear optimization}
+Let's observe the following optimization problem:
+\begin{center}
+    $F(x) \to \min_w$, $F$ is convex, but not smooth.
+\end{center}
+
+Firstly, we want to formulate the necessary condition on the point of our minimum. 
+
+We introduce the subdifferential of $F$ at the point $x$:
+\[ 
+    \partial F(x) := \{ z \in \R^n \mid F(y) \geqslant F(x) + z^T(y - x) \quad \forall y \in \R^n \}
+\] 
+
+This subgradient is a set, and a point from it $z$ is called a subgradient of $F$ at the point $x$.
+
+The necessary condition would be $0 \in \partial F(x)$, but we will prove it later.
+
+\begin{lemma}
+    Subdifferential is a convex set.
+\end{lemma}
+\begin{proof}
+    \begin{align*}
+        z_1 \in \partial F(x) &\Longrightarrow F(y) \geqslant F(x) + z_1^T(y - x) \quad \forall y \in \R^n \\
+        z_2 \in \partial F(x) &\Longrightarrow F(y) \geqslant F(x) + z_2^T(y - x) \quad \forall y \in \R^n
+    \end{align*}
+
+    And: 
+    \begin{align*}
+        \alpha F(y) + (1 - \alpha) F(y) &\geqslant \alpha F(x) + (1 - \alpha) F(x) + (\alpha z_1 + (1 - \alpha) z_2)^T(y - x) \\
+        F(y) &\geqslant F(x) + (\alpha z_1 + (1 - \alpha) z_2)^T(y - x) \quad \forall y \in \R^n \\ 
+             &\Longrightarrow \alpha z_1 + (1 - \alpha) z_2 \in \partial F(x)
+    \end{align*}
+\end{proof}
+
+\begin{theorem}[Necessary and sufficient condition for the minimum] \; 
+
+    \begin{center}
+        $x_0$ is the minimum point of $F(x)$ if and only if $0 \in \partial F(x_0)$.
+    \end{center}
+    Meaning that the zero vector lays in the subdifferential of $F$ at the point $x$.
+\end{theorem}
+\begin{proof}
+    \begin{align*}
+        0 \in \partial F(x_0) &\Longleftrightarrow F(y) \geqslant F(x_0) + 0^T(y - x_0) \quad \forall y \\
+                              &\Longleftrightarrow F(y) \geqslant F(x_0) \quad \forall y
+    \end{align*}
+\end{proof}
+
+\subsection{Subgradient method}
+The subgradient method is a generalization of the gradient method for non-smooth functions.
+\begin{gather*}
+    \begin{cases}
+        z_k \in \partial F(w_k) \\
+        w_{k+1} = w_k - \alpha_k z_k
+    \end{cases}
+\end{gather*}
+
+Usually we take: 
+\[ 
+    \overline{w}_k = \operatorname{argmin}_{0 \leqslant i \leqslant k} F(w_i)
+\] 
+
+Then: 
+\begin{align*}
+    \norm{w_{k+1} - w_{opt}}_2^2 &= \norm{w_k - \alpha_k z_k - w_{opt}}_2^2 \\
+        &= \norm{w_k - w_{opt}}_2^2 - 2\alpha_k z_k^T(w_k - w_{opt}) + \alpha_k^2 \norm{z_k}_2^2 \\ 
+        &= \ldots \\ 
+        &= \norm{w_0 - w_{opt}}_2^2 - 2\sum_{i=0}^{k} \alpha_i z_i^T(w_i - w_{opt}) + \sum_{i=0}^{k} \alpha_i^2 \norm{z_i}_2^2 \\ 
+        &\leqslant \norm{w_0 - w_{opt}}_2^2 - 2 \sum_{i=0}^{k} \alpha_i (F(w_i) - F(w_{opt})) + \sum_{i=0}^{k} \alpha_i^2 \norm{z_i}_2^2
+\end{align*}
+
+\begin{align*}
+    2 \left(\sum_{i=0}^{k} \alpha_i\right) (F(\overline{w}_k) - F_{opt}) &\leqslant 2 \sum_{i=0}^{k} \alpha_i (F(w_i) - F_{opt}) \\ 
+    &\leqslant \norm{w_0 - w_{opt}}_2^2 + \sum_{i=0}^{k} \alpha_i^2 \norm{z_i}_2^2 - \norm{w_{k+1} - w_{opt}}_2^2 \\ 
+    &\leqslant \norm{w_0 - w_{opt}}_2^2 + \sum_{i=0}^{k} \alpha_i^2 \norm{z_i}_2^2 
+\end{align*}
+
+And finally: 
+\begin{gather*}
+    F(\overline{w}_k) - F_{opt} \leqslant \frac{\norm{w_0 - w_{opt}}_2^2 + \sum_{i=0}^{k} \alpha_i^2 \norm{z_i}_2^2}{2 \sum_{i=0}^{k} \alpha_i}
+\end{gather*}
+
+We derived the upper bound for the difference between the function value at the point $\overline{w}_k$ and the optimal value.
+
+Let's discuss different strategies for choosing $\alpha_k$.
+
+\circled{1} The first one is the constant step size: $\alpha_k = h$: 
+\[ 
+    \frac{R^2 + (k+1)h^2 G^2}{2h(k+1)} = \frac{R^2}{2h(k+1)} + \frac{hG^2}{2} \to \frac{hG^2}{2} \quad \text{as } k \to \infty
+\] 
+where $G$ is the upper bound for the norm of the subgradient: $\norm{z_i}_2 \leqslant G$.
+
+\circled{2} The second one is $\alpha_i = \frac{h}{\norm{z_i}} \geqslant \frac{h}{G}$:
+\[ 
+    \frac{R^2 + (k+1) h^2}{2(k+1)\frac{h}{G}} = \frac{R^2}{2(k+1)h} + \frac{hG}{2} \to \frac{hG}{2} \quad \text{as } k \to \infty
+\] 
+
+\circled{3} The third is $\sum_{i = 0}^{\infty} \alpha_i = \infty$, $\sum_{i = 0}^{\infty} \alpha_i^2 < \infty$. Say: 
+\[ 
+    \alpha_i = \frac{h}{(i+1)^\tau} \quad \text{where } \tau \in \left(\frac{1}{2}, 1\right]
+\]
+
+\circled{4} $\sum_{i = 0}^{\infty} \alpha_i = \infty$, $\sum_{i = 0}^{\infty} \alpha_i^2 = \infty$. Yet: 
+\[ 
+    \frac{\sum_{i = 0}^{\infty} \alpha_i^2}{\sum_{i = 0}^{\infty} \alpha_i} \to 0 \quad \text{as } k \to \infty
+\] 
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{c c c}
+        \toprule
+        \textbf{Method} & \textbf{Function} & \textbf{Convergence rate} \\
+        \midrule
+        GD & Convex, smooth and Lipschitz & $\mathcal{O}(\frac{1}{k})$ \\
+        \midrule
+        Subgradient Method & Convex, non-smooth, Lipschitz & $\tilde{\mathcal{O}}(\frac{1}{\sqrt{k}})$ \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+As you can see, the subgradient method is slow and difficult. This standard approach is unfortunately not very efficient as converges really slow.
+
+Now we will answer the question of how to compute the subdifferential of the given function analytically. 
+\begin{gather*}
+    F: E \to \R, \; E \subseteq \R^n \\ 
+    \partial F(x) = \{ z \in \R^n \mid F(y) \geqslant F(x) + z^T(y - x) \quad \forall y \in E \}
+\end{gather*}
+
+\begin{conj}
+    $F$ is called subdifferentiable at the point $x$ if $\partial F(x) \neq \varnothing$. 
+\end{conj}
+
+\begin{conj}
+    $F$ is called subdifferentiable on the set $E$ if $\partial F(x) \neq \varnothing$ for all $x \in E$.
+\end{conj}
+
+\begin{theorem}
+    $f$ is subdifferentiable on convex set $E$ $\Longrightarrow$ $f$ is convex on $E$.
+\end{theorem}
+\begin{proof}
+    $x, y \in E \quad \alpha x + (1 - \alpha) y \in E \quad z \in \partial F(\alpha x + (1 - \alpha) y)$
+
+    \begin{align*}
+        F(x) &\geqslant F(\alpha x + (1 - \alpha) y) + z^T(1 - \alpha) (x - y)\\
+        F(y) &\geqslant F(\alpha x + (1 - \alpha) y) + z^T \alpha (y - x)
+    \end{align*}
+
+    And combining these two inequalities we get:
+    \begin{align*}
+        \alpha F(x) + (1 - \alpha) F(y) &\geqslant F(\alpha x + (1 - \alpha) y) + z^T(\alpha \cancel{(1 - \alpha) (x - y)} + \alpha (1 - \alpha) (y - x)) \\
+        &\Longrightarrow F \text{ is convex}
+    \end{align*}
+\end{proof}
+
+\begin{lemma}
+    $f : E \to R, \; f$ is convex, $x \in \operatorname{int} E$ $\Longrightarrow$ $f$ is subdifferentiable at the point $x$. 
+\end{lemma}
+
+\begin{lemma}
+    $f$ is convex, $x \in \operatorname{int} E$, $f$ --- differentiable at $x$ $\Longrightarrow \partial f(x) = \{ \nabla f(x) \}$. 
+\end{lemma}
+
+\begin{lemma}
+    $f$ is convex, $x \in \operatorname{int} E$, $\partial f(x)$ consists of a single point $\Longrightarrow$ $f$ is differentiable at $x$.
+\end{lemma}
+
+\subsection{Subdifferential calculus}
+
+\begin{enumerate}
+    \item $f: E \to \R, x \in E, c > 0$: 
+    \[ 
+        \partial (c f)(x) = c \partial f(x)
+    \] 
+    \item $f: E \to \R, g: G \to \R, x \in E \cap G$:
+    \[ 
+        \partial (f + g)(x) \supseteq \partial f(x) + \partial g(x)
+    \]  
+    If $f$ and $g$ are convex, then the equality holds.
+    \item $T: V \to W, T(x) = A(x) + b, \quad g: E \to \R, \quad E \subseteq W$: 
+    \[ 
+        \partial (g(T(x)))(x_0) \supseteq A^{+} \partial g(T(x_0))
+    \] 
+    Where $A^{+}$ is conjugate operator. 
+    If $g$ is convex and $T(V) \cap \operatorname{int} E \neq \varnothing$, then the equality holds.
+    \item $f(x) = \max(f_1(x), \ldots, f_m(x))$ and
+    \[ 
+        I(x) = \{ i \in \{ 1, \ldots, m \} \mid f_i(x) = \max(f_1(x), \ldots, f_m(x)) \}
+    \] 
+    Then: 
+    \[ 
+        \partial f(x) \supseteq \operatorname{Conv} \left( \bigcup_{i \in I(x)} \partial f_i(x) \right)
+    \] 
+    If $f_i$ are convex, then the equality holds.
+\end{enumerate}
+
+Let's now look at an example: 
+
+Say we have a function: 
+\[ 
+    f(x) = \norm{A x - b}_1
+\]
+
+We want to compute the subdifferential of this function.
+\begin{align*}
+    \partial \norm{y}_1 &= \partial \left( \sum\limits_{i} \abs{y_i} \right) \\ 
+    &= \sum_i \partial \abs{y_i} \\
+    &= \sum_i \partial \max(y_i, -y_i) \\
+    &= \sum_i \begin{cases}
+        y_i > 0, \; \{ e_i \} \\
+        y_i < 0, \; \{ -e_i \} \\
+        y_i = 0, \; \operatorname{Conv}(\{ e_i, -e_i \}) = e_i [-1, 1]
+    \end{cases}
+\end{align*}
+
+So: 
+\[ 
+    \partial f(x) = A^T \partial \norm{\cdot}_1(Ax - b)
+\] 
