@@ -1,0 +1,200 @@
+\section{Proximal Optimization Methods}
+
+\begin{conj}[Convex Composite Optimization]
+    \[ 
+        F(w) := f(w) + h(w) \to \min_w
+    \] 
+    Where: 
+    \begin{gather*}
+        f \in \mathcal{C}^1, \text{convex} \\ 
+        h \in \mathcal{C}, \notin \mathcal{C}^1, \text{ convex, ``simple''}
+    \end{gather*}        
+\end{conj}
+
+\begin{gather*}
+    f(w) = \frac{1}{N} \sum_i L(y_i, g(x_i, w)) \\
+    h(w) = \lambda \norm{w}_1 \text{ or } \lambda \norm{w}_{1/2}
+\end{gather*}
+
+\begin{align*}
+    F(w) &= f(w) + h(w) \\
+         &\leqslant m_k (w) \\ 
+         &= f (w_k) + \nabla f(w_k)^T (w - w_k) + \frac{L}{2} \norm{w - w_k}^2 + h(w) \to \min_w 
+\end{align*}
+
+\begin{align*}
+    F(w_{k+1}) &\leqslant m_k(w_{k+1}) \leqslant m_k(w_k) = F(w_k) \\ 
+    m_k (w) &= \nabla f(w_k)^T w + \frac{L}{2} w^T w - \frac{L}{2} 2 w^T w_k + h(w) + const \\ 
+    &= \frac{L}{2} \norm{w - (w_k - \frac{1}{L} \nabla f(w_k))}_2^2 + h(w) + const \to \min_w \\ 
+    &\Longleftrightarrow \frac{1}{2} \norm{w - (w_k - \frac{1}{L} \nabla f(w_k))}_2^2 + \frac{1}{L} h(w) \to \min_w
+\end{align*}
+
+\begin{conj}[Proximal Gradient Method]
+    \begin{gather*}
+        \operatorname{prox}_h (x) = \argmin_u \left(\frac{1}{2} \norm{u - x}_2^2 + h(u)\right) \\ 
+        w_{k+1} = \argmin_w m_k(w) = \operatorname{prox}_{\frac{1}{L} h} (w_k - \frac{1}{L} \nabla f(w_k)) 
+    \end{gather*}
+\end{conj}
+
+\begin{conj}[Simple function]
+    We will call function $h$ simple if we can compute $\operatorname{prox}_h (x)$ in closed form.
+\end{conj}
+
+\examples{} Proximal operators.
+\begin{enumerate}
+    \item[\circled{1}] $h(w) = 0, \; \operatorname{prox}_h (x) = x$
+    \item[\circled{2}] $h(w) = I_c(w) = \begin{cases} 0, & w \in \mathcal{C} \\ +\infty, & \text{otherwise} \end{cases}$
+    
+    \[ 
+        \min_w \left(f(w) + I_c(w)\right) = \min_{w \in \mathcal{C}} f(w)
+    \] 
+
+    \begin{align*}
+        \operatorname{prox}_{I_c} (x) &= \argmin_u \left(\frac{1}{2} \norm{u - x}_2^2 + I_c(u)\right) \\ 
+        &= \argmin_{u \in \mathcal{C}} \frac{1}{2} \norm{u - x}_2^2 = \Pr_{\mathcal{C}} (x)
+    \end{align*}
+
+    Where $\Pr_{\mathcal{C}} (x)$ is the closest point to $x$ in $\mathcal{C}$.
+
+    \item[\circled{3}] $h(w) = \lambda \norm{w}_1$
+    
+    \begin{align*}
+        \operatorname{prox}_h(x) &= \argmin_u \left(\frac{1}{2} \norm{u - x}_2^2 + \lambda \norm{u}_1\right) \\
+        &= \{ \argmin_{u_i \in \R} \frac{1}{2} (u_i - x_i)^2 + \lambda \abs{u_i} \}^D_{i=1} 
+    \end{align*}
+
+    We need to solve: 
+    \[ 
+        \varphi(u) = \frac{1}{2} (u - x)^2 + \lambda \abs{u} \to \min_u
+    \] 
+\end{enumerate}
+
+Say we fixed $x$: 
+\begin{align*}
+    y &:= \prox_{\alpha h} (x - \alpha \nabla f(x)) \\ 
+    &= x - \alpha G_{\alpha} (x) \\ 
+    &\Longleftrightarrow G_\alpha(x) = \frac{1}{\alpha} (x - y) = \frac{1}{\alpha} (x - \prox_{\alpha h} (x - \alpha \nabla f(x)))
+\end{align*}
+
+$G$ is a gradient mapping.
+
+\begin{theorem}
+    \[ 
+        x = \argmin_x F(x) \Longleftrightarrow G_\alpha(x) = 0
+    \] 
+\end{theorem}
+
+\subsection{Choosing the step size}
+
+\begin{algorithm}
+\caption{Choosing step size of the Proximal GD}
+\begin{algorithmic}[1]
+\State{} Choose $L$
+\While{$f(y) > f(x) + \nabla f(x)^T (y - x) + \frac{L}{2} \norm{y - x}^2$}
+    \State{} $y \gets \prox_{\frac{1}{L} h} (x - \frac{1}{L} \nabla f(x))$
+    \State{} $L \gets L \cdot \gamma, \gamma > 1$
+\EndWhile{}
+\State{} $L \gets L \cdot \rho, \rho < 1$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Proximal Newton Method}
+
+We start the same, with an introduction of a proximal approximation of our function: 
+\begin{align*}
+    F(x) &= f(x) + h(x) \\ 
+    &\approx m_k(x) \\ 
+    &:= f(x_k) + \nabla f(x_k)^T (x - x_k) + \frac{1}{2} (x - x_k)^T \nabla^2 f(x_k) (x - x_k) + h(x) \to \min_x
+\end{align*}
+
+Then introduce: 
+\[
+    \prox_h^H (x) := \argmin_u \left(\frac{1}{2} (u - x)^T H (u - x) + h(u)\right)
+\] 
+-- scaled proximal operator.
+
+\[ 
+    \begin{cases}
+        \hat{x}_{k+1} = \prox_{h}^{\nabla^2 f} (x_k - (\nabla^2 f(x_k))^{-1} \nabla f(x_k)) \\ 
+        x_{k+1} = x_k + \alpha_k (\hat{x}_{k+1} - x_k)
+    \end{cases}
+\] 
+
+Choosing $\alpha_k$:
+\[ 
+    F(x_{k+1}) \leqslant F(x_k) + c_1 \alpha_k \nabla f(x_k)^T (\hat{x}_{k+1} - x_k) + c_1 (h(x_{k+1}) - h(x_k))
+\] 
+
+The question is, how do we compute this scaled proximal operator?
+
+\begin{align*}
+    \prox_h^{\nabla^2 f} (x_k - \left(\nabla^2 f(x_k)\right)^{-1} \nabla f (x_k)) &= \argmin_x \left(\frac{1}{2} (x - x_k)^T \nabla^2 f(x_k) (x - x_k) + \nabla f(x_k)^T x + h(x)\right) \\
+    &= \argmin_x \left(s(x) + h(x)\right) 
+\end{align*}
+
+\subsection{Closed functions, convex conjugate functions and conjugate norms}
+
+\begin{conj}[Closed function]
+    \[ 
+        f: E \to \R 
+    \] 
+    Function $f$ is closed if its epigraph is a closed set.
+\end{conj}
+
+\example{} $f(x) = \log{x}: \R_{++} \to \R$ is not closed.
+\example{} $f(x) = -\log{x}$ is closed.
+
+\begin{conj}[Lower semi-continuous function]: 
+    \[ 
+        \lim\limits_{x \to x_0} f(x) \geqslant f(x_0)
+    \] 
+\end{conj}
+
+\example{} $f(x) = \begin{cases} -1, & x = 0 \\ 0, & x \neq 0 \end{cases}$ is lower semi-continuous.
+
+\begin{theorem}
+    $f: E \to \R$ is closed if and only if:
+    \begin{enumerate}
+        \item $f$ is lower semi-continuous
+        \item $\forall x_0 \in \frac{\partial E}{E} \quad \lim\limits_{x \to x_0} f(x) \to +\infty$
+    \end{enumerate}
+\end{theorem}
+
+\notice{} $E$ is closed $\Longrightarrow \frac{\partial E}{E} = \varnothing$
+
+\begin{conj}[Convex conjugate function]
+    $f: E \to \R, f^*: E^* \to \R$ is a convex conjugate function if:
+    \[ 
+        f^*(s) = \sup_{x \in E} (x^T s - f(x))
+    \]
+    Where $E^*$ is: 
+    \[ 
+        E^* = \{s \mid \sum_{x \in E} (x^T s - f(x)) < +\infty\}
+    \] 
+\end{conj}
+
+\begin{theorem}[Fenchel-Moreau]
+    $f$ --- convex and closed $\Longrightarrow$ $f^{**} = f$.
+    \begin{align*}
+        f^* &= \sup_{x \in E} (x^T s - f(x)) \geqslant x^T s - f(x) \\
+        &\Longrightarrow x^T s \leqslant f(x) + f^*(s) \text{ --- Fenchel-Young's inequality}
+    \end{align*}
+\end{theorem}
+
+\begin{theorem}
+    $s \in \partial f(x) \Longleftrightarrow s^T x_0 = f(x_0) + f^*(s)$
+    And if $f$ is convex and closed, then it is also equivalent to $x_0 \in \partial f^*(s)$.
+\end{theorem}
+
+\begin{conj}[Conjugate norm]
+    \[ 
+        \norm{s}_* = \sup_{x : \norm{x} = 1} x^T s
+    \] 
+\end{conj}
+
+\textbf{Properties of the conjugate norm:}
+\begin{itemize}
+    \item[\circled{1}] $\norm{s}_*$ --- norm 
+    \item[\circled{2}] $\norm{s}_* = \sum_{x : \norm{x} \leqslant 1} x^T s$
+    \item[\circled{3}] $x^T s \leqslant \norm{x} \norm{s}_*$
+\end{itemize}
