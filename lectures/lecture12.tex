@@ -1,0 +1,96 @@
+\subsubsection{Examples of computing proximal operators}
+\begin{itemize}
+    \item[\circled{1}] 
+    \[ 
+        h(x) = \lambda \max(0, x)
+    \]
+    Then: 
+    \begin{gather*}
+        \prox_h(u) = \argmin_x \frac{1}{2} \norm{x - u}^2 + h(x) \\ 
+        0 \in \partial (\frac{1}{2} \norm{x - u}^2 + \lambda \max(0, x)) = x - u + \lambda \begin{cases}
+            x > 0 & \{+1\} \\ 
+            x < 0 & \{0\} \\
+            x = 0 & [0, 1]
+        \end{cases}
+    \end{gather*}
+    Consider cases: 
+    \begin{align*}
+        x > 0 & \implies 0 = x - u + \lambda \implies x = u - \lambda \implies u > \lambda \\
+        x < 0 & \implies 0 = x - u \implies x = u \implies u < 0 \\
+        x = 0 & \implies 0 \in [-u, -u + \lambda] \implies 0 \leq u \leq \lambda
+    \end{align*}
+    Then the proximal operator is:
+    \[
+        x = \prox_h(u) = \begin{cases}
+            u - \lambda & u > \lambda \\ 
+            0 & 0 \leq u \leq \lambda \\ 
+            u & u < 0
+        \end{cases}
+    \]
+\end{itemize}
+
+\begin{theorem}[Morean Decomposition]
+    Let $f$ be convex and closed, then: 
+    \[ 
+        x = \prox_f(x) + \prox_{f^*}(x) 
+    \]
+\end{theorem}
+\begin{proof}
+    \begin{align*}
+        u = \prox_f(x) &\implies 0 \in u - x + \partial f(u) \\ 
+        &\implies v := x - u \in \partial f(u) \\
+        &\implies u \in \partial f^*(v) \\
+        &\implies x - v \in \partial f^*(v) \\
+        &\implies v = \prox_{f^*}(x) \\ 
+        &\implies x = u + v = \prox_f(x) + \prox_{f^*}(x)
+    \end{align*}
+\end{proof}
+
+\section{Stochastic Optimization}
+\[ 
+    f(x) = \frac{1}{N} \sum_{i=1}^N f_i(x) \to \min_x, N \gg 1
+\] 
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{c c c}
+        \toprule
+        \textbf{Value} & \textbf{Computational complexity} \\
+        \midrule
+        $f_i(x)$ & $\mathcal{O}(q)$ \\
+        \midrule
+        $\nabla f_i(x)$ & $\mathcal{O}(q)$ \\
+        \midrule
+        $f(x)$ & $\mathcal{O}(qN)$ \\
+        \midrule
+        $\nabla f(x)$ & $\mathcal{O}(qN)$ \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsubsection{Stochastic Gradient Descent}
+\[ 
+    \begin{cases}
+        i_k \sim U[1, N] \\
+        g_k = \nabla f_{i_k}(x_k) \\
+        x_{k+1} = x_k - \alpha_k g_k
+    \end{cases}
+\] 
+The good thing is that SGD is an unbiased estimate of the gradient: 
+\[ 
+    \E_{i_k \sim U[1, N]} g_k = \sum \frac{1}{N} \nabla f_i(x_k) = \nabla f(x_k)
+\] 
+
+What is the computational complexity of SGD? Sampling is $\mathcal{O}(1)$, computing the gradient is $\mathcal{O}(q)$, and updating the point is $\mathcal{O}(d)$. 
+
+Yet, this method is not the only way to get an unbiased estimate of the gradient. It could be also done not by sampling the components, but by mini-batching.
+
+\subsubsection{SGD with mini-batches}
+\[ 
+    \begin{cases}
+        I_k \subset U[1, N] \\
+        g_k = \frac{1}{|I_k|} \sum_{i \in I_k} \nabla f_i(x_k) \\
+        x_{k+1} = x_k - \alpha_k g_k
+    \end{cases}
+\] 
+What is the point of making the batch size bigger? The variance decreases then. 
