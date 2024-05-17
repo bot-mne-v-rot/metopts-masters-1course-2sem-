@@ -102,19 +102,19 @@ We can check it this way:
 \end{gather*}
 
 \subsection{Convergence rate}
-One other important paramter of an optimization algorithm, used, for example for evaluating the performance of the algorithm, is the convergence rate. 
+One other important parameter of an optimization algorithm, used, for example for evaluating the performance of the algorithm, is the convergence rate. 
 
 Yet, sometimes, different algorithms have different convergence rates for different functions, so it is important to evaluate algorithms for a class of functions, not just for a single function.
 
-Say we have a sequence of points $\{x_k\}$, and we want to measure the distance between the current point and the optimal point.
+Say we have a sequence of points $\{x_k\}$, and we want to measure the distance between the current point and the optimal point. We can do it in several ways and our usual choice would be the first one:
 \begin{align*}
-  r_k &= f(x_k) - f_{opt} \\ 
-  &= \norm{x_k - x_{opt}} \\ 
-  &= \norm{\nabla f(x_k)} \\
+  r_k &:= f(x_k) - f_{opt} \\ 
+  &:= \norm{x_k - x_{opt}} \\ 
+  &:= \norm{\nabla f(x_k)} \\
 \end{align*}
 
 \begin{definition}
-  $\{r_k\}$ has linear convergence rate if $\exists X, q \in (0, 1), k_0$ such that $\forall k \geqslant k_0 \quad r_{k} \leqslant C q^k$
+  $\{r_k\}$ has linear convergence rate if $\exists C, q \in (0, 1), k_0$ such that $\forall k \geqslant k_0 \quad r_{k} \leqslant C q^k$
 \end{definition}
 
 For a linear convergent algorithm, each step requires a constant number of iterations.
@@ -130,7 +130,7 @@ So the quality of the algorithm really depends on this constant. Whether it is b
 \end{definition}
 
 \begin{definition}
-  $\{r_k\}$ has superlinear convergence rate if it has a linear convergence rate $\forall q \in (0, 1)$ 
+  $\{r_k\}$ has superlinear convergence rate if it has a linear convergence rate $\forall q \in (0, 1)$.
 \end{definition}
 
 \notice \; An example of a superlinear convergent algorithm is the Newton's method.
@@ -151,10 +151,10 @@ Then:
 
 Let's consider an example. A sequence is $\{r_k\} = \frac{1}{k}$. Then: 
 \begin{gather*}
-  \frac{r_{k+1}}{r_k} = \frac{k}{k+1} \underbrace{\longrightarrow}_{k \to \infty} 1 \Longrightarrow \text{sublinear} 
+  \frac{r_{k+1}}{r_k} = \frac{k}{k+1} \xrightarrow[k \to \infty]{} 1 \Longrightarrow \text{sublinear} 
 \end{gather*}
 
-\begin{theorem} (Criterion of roots) Lets consider a sequence $\{r_k\} \underbrace{\longrightarrow}_{k \to \infty} 0$, $r_k \geqslant 0$ and:
+\begin{theorem} (Criterion of roots) Lets consider a sequence $\{r_k\} \xrightarrow[k \to \infty]{} 0$, $r_k \geqslant 0$ and:
 \begin{gather*}
   \alpha := \overline{\lim_{k \to \infty}} \sqrt[k]{r_k}
 \end{gather*}
@@ -168,10 +168,9 @@ Then:
 
 \begin{definition} \textit{Line search} We have $f(x) \to \min_{x}, x \in \R^n, f \in \mathcal{C}^1$:
 \begin{gather*}
-  x_{k+1} = x_k + \alpha_k d_k, d_k \in \R^n, \alpha_k \in \R_+ \\ 
-  \text{Requirement for } d_k: \nabla f(x_k)^T d_k < 0
+  x_{k+1} = x_k + \alpha_k d_k, \alpha_k \in \R_+, d_k \in \R^n \text{ s.t. } d_k: \nabla f(x_k)^T d_k < 0
 \end{gather*}
-So: 
+And our goal is to obtain 
 $$
   \arg \min \underbrace{f(x_k + \alpha d_k)}_{\varphi(\alpha)} = \alpha_k
 $$
@@ -187,7 +186,7 @@ One of them is the Armijo condition.
 \end{gather*}
 \end{definition}
 
-Also there are weak and strong Wolfe conditions.
+Here, we fix the constant before the beginning and keep it during the search algorithm. Also there are weak and strong Wolfe conditions.
 \begin{definition} \textit{Weak Wolfe condition}:
 \begin{gather*}
   \varphi(\alpha) \geqslant c_2 \varphi'(0) \\
@@ -209,7 +208,7 @@ Also there are weak and strong Wolfe conditions.
   Let's consider the Armijo condition. 
   \begin{gather*}
     \varphi(\alpha) = \varphi(0) + \alpha \varphi'(0) + \overline{o} (\alpha) \leqslant \varphi(0) + c_1 \alpha \varphi'(0) \\
-    \overline{o}(\alpha) + \leqslant \alpha \varphi'(0) (c_1 - 1) \\
+    \overline{o}(\alpha) \leqslant \alpha \varphi'(0) (c_1 - 1) \\
   \end{gather*}
 
   \begin{gather*}
@@ -246,6 +245,8 @@ What are the stopping conditions for the expansion procedure?
 
 We do an expansion procedure and then the zooming procedure.
 
+\newpage
+
 \begin{definition} \textit{Expansion procedure}:
 \begin{algorithm}
   \caption{Expansion procedure}
@@ -272,8 +273,8 @@ We do an expansion procedure and then the zooming procedure.
 
 On the zooming procedure we are doing aka binary search and reducing the interval of the search.
 
-\begin{definition} \textit{Zoom procedure}: 
-Depends on two arguments: $\alpha_{low}, \alpha_{high}$. Requirements for the arguments: $\alpha_{low}$ should satisfy the Armijo condition ans has the least function value we have seen so far. Also $\varphi'(\alpha_{low})(\alpha_{high} - \alpha_{low}) < 0$.
+\begin{definition} \textit{Zoom procedure}
+Depends on two arguments: $\alpha_{low}, \alpha_{high}$. Requirements for the arguments: $\alpha_{low}$ should satisfy the Armijo condition and has the least function value we have seen so far. Also $\varphi'(\alpha_{low})(\alpha_{high} - \alpha_{low}) < 0$.
 \begin{algorithm}
   \caption{Zoom procedure}
   \begin{algorithmic}[1]

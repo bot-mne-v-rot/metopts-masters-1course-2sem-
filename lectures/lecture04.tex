@@ -51,7 +51,7 @@ Today we will denote:
 \end{conj}
 
 \begin{theorem}
-    If $\{d_i\}^{n-1}_{i=0}$, then $\{d_i\}^{n-1}_{i=0}$ is linearly independent.
+    If $\{d_i\}^{n-1}_{i=0}$ are conjugate, then $\{d_i\}^{n-1}_{i=0}$ is linearly independent.
 \end{theorem}
 \begin{proof}
     \[
@@ -68,13 +68,13 @@ Why may we be interested in such a property?
 If $\{d_i\}^{n-1}_{i=0}$ are conjugate, then $\{d_i\}$ --- basis in $\mathbb{R}^n$.
 
 \begin{gather*}
-    A x_opt = b \\ 
-    x_opt - x_0 = \sum^{n-1}_{i=0} \alpha_i d_i \mid \cdot d_j^T A \\
-    d_j^T A (x_opt - x_0) = \sum^{n-1}_{i=0} \alpha_i d_j^T A d_i = \alpha_j d_j^T A d_j
+    A x_{opt} = b \\ 
+    x_{opt} - x_0 = \sum^{n-1}_{i=0} \alpha_i d_i \mid \cdot d_j^T A \\
+    d_j^T A (x_{opt} - x_0) = \sum^{n-1}_{i=0} \alpha_i d_j^T A d_i = \alpha_j d_j^T A d_j
 \end{gather*}
 Then what is the optimal $\alpha_j$?
 \begin{gather*}
-    \alpha_j = \frac{d_j^T A (x_opt - x_0)}{d_j^T A d_j} = \frac{d_j^T (b - A x_0)}{d_j^T A d_j} = - \frac{d_j^T g_0}{d_j^T A d_j}
+    \alpha_j = \frac{d_j^T A (x_{opt} - x_0)}{d_j^T A d_j} = \frac{d_j^T (b - A x_0)}{d_j^T A d_j} = - \frac{d_j^T g_0}{d_j^T A d_j}
 \end{gather*}
 
 So using such conjugate directions we can find the optimal step $\alpha_j$, which looks really similar to the one, which we have found analytically. Actually, they are equal. Let's check that. 
@@ -121,7 +121,7 @@ And if we optimize w.r.t $\tilde{x}$:
 \begin{align*}
     \tilde{f}(\tilde{x}) &:= f(C \tilde{x}) \\ 
     &= \frac{1}{2} \tilde{x}^T \underbrace{C^T A C}_{\Lambda} \tilde{x} - \tilde{x}^T C^T b \\
-    &= \frac{1}{2} \sum^{n-1}_{i=0} \left(\lambda_i \tilde{x}_i^2 - 2 (C^ b)_i \tilde{x}_i \right) \to \min_{\tilde{x}}
+    &= \frac{1}{2} \sum^{n-1}_{i=0} \left(\lambda_i \tilde{x}_i^2 - 2 (C^T b)_i \tilde{x}_i \right) \to \min_{\tilde{x}}
 \end{align*}
 As could be seen from the last expression, we can now solve n independent one-dimensional problems instead of a multidimensional one.
 
@@ -229,7 +229,7 @@ Let's finally find the formula for $\alpha_k$ and $\beta_k$:
 \begin{enumerate}
     \item If $A$ has $r$ distinct eigenvalues, then the CG method converges in no more than $r$ steps.
     \item If $A$ has $r$ clusters of eigenvalues, then the CG method converges in approximately $r$ steps.
-    \item $\mu := \lambda_{\min}(A), \quad L := \lambda_{\max}(A), \quad \kappa \mathcal{C}_{L}^{2,1}, f --- \mu$ strictly convex.
+    \item $\mu := \lambda_{\min}(A), \quad L := \lambda_{\max}(A), \quad \kappa \mathcal{C}_{L}^{2,1}, f - \mu$ strictly convex.
 \end{enumerate}
 
 How do we now apply the CG method to the non-quadratic functions? For that we can use the Fletcher-Reeves method.
@@ -272,7 +272,7 @@ If we apply the CG method to the modified system and solve it, we can reconstruc
     x = S^{-1} \tilde{x}
 \] 
 
-IF\! We can find such matrix $S$, that $\tilde{A}$ has a lower conditional number than $A$, then we can solve the modified system faster than the initial one!! Great success!! (How to find such $S$ is a different question).
+If we can find such matrix $S$, that $\tilde{A}$ has a lower conditional number than $A$, then we can solve the modified system faster than the initial one!! Great success!! (How to find such $S$ is a different question).
 
 \begin{gather*}
     \tilde{g_k} = \tilde{A} \tilde{x}_k - \tilde{b} = S^{-T} A S^{-1} S x_k - S^{-T} b = S^{-T} (A x_k - b) = S^{-T} g_k \\

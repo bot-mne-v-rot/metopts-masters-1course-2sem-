@@ -179,7 +179,7 @@ We will use a general result, that we have already deduced:
 What does it mean for the point to be close to the minimum? These are Armijo and Wolfe conditions.
 \begin{itemize}
     \item $f(x_k + \alpha_k d_k) \leqslant f(x_k) + c_1 \alpha_k \nabla f(x_k)^T d_k$
-    \item $\nabla f(x_k + \alpha_k d_k) \geqslant \nabla f(x_k)^T d_k$
+    \item $\nabla f(x_k + \alpha_k d_k) \leqslant \nabla f(x_k)^T d_k$
 \end{itemize}
 
 From the previous lecture, we have deduced this condition on the convergence rate:  
