@@ -176,6 +176,8 @@ $$
 $$
 \end{definition}
 
+Simply saying, the described setup is very basic. We are given the direction in which we want to move and we are looking for the optimal step size. The optimal step-size is denoted as the minimum of the manifold that is defined by all the possible step sizes we can make: $\varphi(\alpha)$.
+
 There are several conditions for searching for a local minimum of $\varphi(\alpha)$. These conditions give us ranges of $\alpha$ which we will consider while searching for the minimum afterwards.
 
 One of them is the Armijo condition.
@@ -222,20 +224,20 @@ Here, we fix the constant before the beginning and keep it during the search alg
 
 And now let's discuss how do we find the particular values of $\alpha_k$ that satisfy the conditions. There are several methods for that.
 
-\begin{definition} \textit{Backtracking algorithm}:
-\begin{itemize}
-  \item $\alpha = \alpha_{start}$
-  \item Repeat: 
-  \begin{itemize}
-    \item if $\varphi(\alpha) \leqslant \varphi(0) + c_1 \alpha \varphi'(0)$, then return $\alpha$
-    \item else $\alpha = \beta \alpha, \beta \in (0, 1)$
-  \end{itemize}
-\end{itemize}
-\end{definition}
+The simple, almost free method is the \textit{backtracking algorithm}. It almost doesn't require any additional computations. It might be helpful when you are lacking computational resources, or, for example: You are using a line\_search function from scipy and it returns None. In this case you can use the backtracking algorithm to get some kind of result.
 
-\notice \; Say you use line\_search from scipy. Sometimes it can return you None. What do you do? You can use backtracking algorithm as it never fails completely.
+\begin{algorithm}
+  \caption{Backtracking algorithm}
+  \begin{algorithmic}[1]
+  \State{$\alpha \gets a_{start}$}
+  \While{$\varphi(\alpha) > \varphi(0) + c_1 \alpha \varphi'(0)$}
+      \State{$\beta \sim U(0, 1)$}
+      \State{$\alpha \gets \beta \alpha$}
+  \EndWhile{}
+\end{algorithmic}
+\end{algorithm}
 
-What are the stopping conditions for the expansion procedure? 
+Now, we would describe a better algorithm, which is going to return the value of $\alpha_k$ that satisfies the Armijo and the weak/strong Wolfe conditions. What are the stopping conditions? 
 
 \begin{itemize}
   \item $\varphi(\alpha) > \varphi(0) + c_1 \alpha \varphi'(0)$ 
@@ -243,12 +245,9 @@ What are the stopping conditions for the expansion procedure?
   \item $\varphi(\alpha_{prev}) < \varphi(\alpha), \qquad c_1 < c_2, \varphi'(\alpha_{prev}) > c_1 \varphi'(0)$
 \end{itemize}
 
-We do an expansion procedure and then the zooming procedure.
+Algorithm will consist of two phases: expansion and zooming. We do an expansion procedure and then the zooming procedure.
 
-\newpage
-
-\begin{definition} \textit{Expansion procedure}:
-\begin{algorithm}
+\begin{algorithm}[H]
   \caption{Expansion procedure}
   \begin{algorithmic}[1]
   \State Initialize $\alpha_0 = 0, \alpha_1 \in (0, \alpha_{max})$
@@ -269,13 +268,12 @@ We do an expansion procedure and then the zooming procedure.
   \EndWhile
 \end{algorithmic}
 \end{algorithm}
-\end{definition}
 
 On the zooming procedure we are doing aka binary search and reducing the interval of the search.
 
 \begin{definition} \textit{Zoom procedure}
 Depends on two arguments: $\alpha_{low}, \alpha_{high}$. Requirements for the arguments: $\alpha_{low}$ should satisfy the Armijo condition and has the least function value we have seen so far. Also $\varphi'(\alpha_{low})(\alpha_{high} - \alpha_{low}) < 0$.
-\begin{algorithm}
+\begin{algorithm}[H]
   \caption{Zoom procedure}
   \begin{algorithmic}[1]
   \While{some condition}
