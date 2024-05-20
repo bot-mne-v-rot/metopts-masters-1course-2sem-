@@ -6,7 +6,7 @@ Let's recall what algorithms we have already discussed for minimizing a function
     \centering
     \begin{tabular}{c c c}
         \toprule
-        \textbf{Method} & \textbf{Memory} & \textbf{Computational costst} \\
+        \textbf{Method} & \textbf{Memory} & \textbf{Computational cost} \\
         \midrule
         GD & $\mathcal{O}(n)$ & $\mathcal{O}(qk)$ \\
         \midrule
@@ -17,7 +17,9 @@ Let's recall what algorithms we have already discussed for minimizing a function
     \end{tabular}
 \end{table}
 
-Now let's introduce the Conjugate Gradient Method (CG). 
+Where $q$ is probably the time to compute the gradient.
+
+Now let's introduce the Conjugate Gradient Method (CG). At first, we will consider the quadratic case.
 
 The problem we are going to solve is the following:
 \begin{gather*}
@@ -27,7 +29,7 @@ The problem we are going to solve is the following:
 \end{gather*}
 So function $f$ is quadratic. We want to be able to solve this problem faster than inversing the matrix $A$. Which would have been the analytical solution to this system.
 
-Let's notice that the step $\alpha_k$ can be chosen without the Armijo and Wolfe conditions, but may be computed analytically.
+Let's notice that in this setting, $\alpha_k$ could be found analytically. We want to go to the bottom of the parabola which is collinear with the gradient.
 
 \begin{align*}
     0 &= \frac{\partial}{\partial \alpha} f(x_k + \alpha d_k) \\ 
@@ -46,9 +48,19 @@ Today we will denote:
     &\Longrightarrow \alpha = - \frac{g_k^T d_k}{d_k^T A d_k}
 \end{align*}
 
+The default GD + this optimal, analytically found step is called the steepest descent method.
+
+We can observe an important property of the steepest descent method: each step is orthogonal to the previous one. Conjugate gradient method is a modification of the steepest descent, which optimizes the steps even more. To define the CGD we need to introduce some definitions: 
+
+\begin{conj}
+    Vectors $u$ and $v$ are called conjugate with respect to matrix $A$ if $u^T A v = 0$.
+\end{conj}
+
 \begin{conj}
     $\{d_i\}^{n-1}_{i=0}$ --- conjugate with respect  to $A$ if $d_i^T A d_j = 0$ for $i \neq j$.
 \end{conj}
+
+Briefly speaking, CGD searches for the solution in the directions, which are $A$-conjugate to each other.
 
 \begin{theorem}
     If $\{d_i\}^{n-1}_{i=0}$ are conjugate, then $\{d_i\}^{n-1}_{i=0}$ is linearly independent.
@@ -102,10 +114,11 @@ And one more important property of the conjugate directions:
         g_k^T d_j &= (A x_k - b)^T d_j = (A (x_0 + \sum^{k-1}_{i=0} \alpha_i d_i) - b)^T d_j \\
         &= g_0^T d_j + \sum^{k-1}_{i=0} \alpha_i d_i^T A d_j = 0
     \end{align*}
-\end{proof}
+\end{proof} 
 
+These are some fantastic news, as now our algorithm will look something like this: take a set of $n$ mutually conjugate directions with respect to $A$, compute the optimal step sizes for each step, and iterate until convergence. Whilst convergence is guaranteed in no more than $n$ steps.
 
-Now we will learn to fastly converge to the solution using the conjugate directions.
+This is what we are going to do: 
 
 \[ 
     f(x) = \frac{1}{2} x^T A x - b^T x 
