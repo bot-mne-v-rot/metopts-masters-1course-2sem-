@@ -112,7 +112,7 @@ Notice that we can derive different inequality constraints and that is bad.
 \end{conj}
 
 \begin{theorem} (KKT)
-    $f, g_i, h_j \in \mathcal{C}^1, x_0$ --- local minimum, at $x_0$ some regularity conditions are satisfied. Then $\exists \lambda_0, \mu_0$ such that:
+    $f, g_i, h_j \in \mathcal{C}^1, x_0$ --- local minimum (AMONG THOSE POINTS THAT SATISFY THE GIVEN CONDITIONS --- feasible point. That means that the gradient of $f$ at $x$ is not neseccary 0), at $x_0$ some regularity conditions are satisfied. Then $\exists \lambda_0, \mu_0$ such that:
     \begin{enumerate}
         \item $\nabla_x L(x_0, \lambda_0, \mu_0) = \nabla_x f(x_0) + \sum_{i=1}^m \lambda_{0i} \nabla_x g_i(x_0) + \sum_{j=1}^p \mu_{0j} \nabla_x h_j(x_0) = 0$ (Stationarity of the Lagrange function)
         \item $x_0 \in F$ (Primal feasibility)
