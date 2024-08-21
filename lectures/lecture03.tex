@@ -99,17 +99,29 @@ Where $Q$ is an orthogonal matrix, and $\Lambda$ is a diagonal matrix with eigen
 
 \subsection{Newton Method}
 
-Our model is: 
-\begin{gather*}
-    f(x_k + d) \approx m_k(d) = f(x_k) + \nabla f(x_k)^T d + \frac{1}{2} d^T B_k d \to \min_d \\ 
-    \nabla m_k(d) = \nabla f(x_k) + B_k d = 0 \Longrightarrow d = -B_k^{-1} \nabla f(x_k) \\ 
-    x_{k+1} = x_k - \alpha_k d_k = x_k - \alpha_k B_k^{-1} \nabla f(x_k)
-\end{gather*}
-
-So and in Newton method, we chose $B_k$ to be the Hessian of the function $f$ at the point $x_k$.
+The basic optimization routine is: 
 \[ 
-    B_k = \nabla^2 f(x_k)
-\]
+    x_{k+1} = x_k + \alpha_k d_k
+\] 
+
+We have a function $f(x)$, computed at the point $x_k$, and we want to minimize it. Let's expand the function at the point $x_k$ using the Taylor series until the second order:
+\[
+    f(x) \approx f(x_k) + \nabla f(x_k)^T (x - x_k) + \frac{1}{2} (x - x_k)^T \nabla^2 f(x_k) (x - x_k)
+\] 
+
+To find where this function is minimized, we need to find the gradient of the function and set it to zero: 
+\[ 
+    \frac{\partial f(x)}{\partial x} = \nabla f(x_k) + \nabla^2 f(x_k) (x - x_k) = 0 
+\] 
+
+When we solve for $x$ the equation above, we will get the new point, at which the approximation of the function is minimized. So its logical, that it would be our new point $x_{k+1}$.
+
+\begin{align*}
+    \nabla f(x_k) + \nabla^2 f(x_k) (x_{k+1} - x_k) &= 0 \\ 
+    \nabla f(x_k) + \nabla^2 f(x_k) \cdot x_{k+1} - \nabla^2 f(x_k) \cdot x_k &= 0 \\
+    \nabla^2 f(x_k) \cdot x_{k+1} &= - \nabla f(x_k) + \nabla^2 f(x_k) \cdot x_k \\
+    x_{k+1} &= x_k - (\nabla^2 f(x_k))^{-1} \nabla f(x_k)
+\end{align*}
 
 Newton method iteration is: 
 \[ 
@@ -122,7 +134,7 @@ If this condition is satisfied, we can garantuee, that:
 \[
     \nabla f(x_{k+1})^T d_k = - \nabla f(x_{k+1})^T (\nabla^2 f(x_k))^{-1} \nabla f(x_k) < 0
 \]
-This means that the direction is the negative gradient, meaning that the function is decreasing.
+This means that the direction is the negative gradient, meaning that the function is decreasing. If Hessian is not positive definite, we can't garantuee that we result in a descent method. 
 
 \begin{theorem}
     Newton method doesn't struggle from poorly scaled functions, like gradient descent does. 
@@ -248,7 +260,9 @@ Global convergence means that we start from arbitrary point and converge to the 
 
 \subsection{Hessian modifications}
 
-Our iteration is: 
+As we already discussed, Newton method sometimes may diverge for non-convex functions due to the Hessian not being positive definite. Tho, we can modify the Hessian to make the method more stable.
+
+General scheme of the method is:
 \[
     x_{k+1} = x_k - \alpha_k B^{-1}_k \nabla f(x_k), \quad B_k = \nabla^2 f(x_k) + E_k, \; B_k \succ 0
 \]
@@ -259,11 +273,14 @@ We can make several modifications to the Hessian, we will cover couple of them.
 
 \subsubsection{Regularization}
 
+First things first, we know that Hessian is symmetric by semantics. Meaning that we can do the eigenvalue decomposition (see previous lecture) of the Hessian.
+
 \[ 
     \nabla^2 f(x_k) = Q \Lambda Q^T, \; \Lambda = \text{diag}(\lambda_1, \lambda_2, \dots, \lambda_n)
 \] 
 
-Then modified Hessian is:
+
+What we will do is modify our Hessian so that all the eigenvalues are positive: 
 \begin{gather*}
     B_k = Q \tilde{\Lambda} Q^T, \; \tilde{\Lambda} = \begin{cases}
         \lambda_i, \; \text{if } \lambda_i \geqslant \varepsilon \\
@@ -271,23 +288,36 @@ Then modified Hessian is:
     \end{cases}
 \end{gather*}
 
+Symmetric $n \times n$ matrix has $n$ eigenvalues, and these eigenvalues represent how does the matrix, interpreted as a linear transformation, stretch the space. $n$ eigenvalues correspond to $n$ different eigenvectors, and these eigenvectors are orthogonal. They represent different subspaces of the space, and the eigenvalues represent how much the matrix stretches the space in these subspaces.
+
+Let's recall what is an eigenvalue of a matrix $A$: 
+\[ 
+    A x = \lambda x
+\]
+
+If an eigenvalue is positive, then the matrix stretches the space in the direction of the corresponding eigenvector and increases the norm of the vector. If the eigenvalue is negative, then the matrix compresses the space in the direction of the corresponding eigenvector and decreases the norm of the vector. If the eigenvalue is zero, then the matrix doesn't change the space in the direction of the corresponding eigenvector.
+
+Returning to our regularization method. Say Hessian was not positive definite. By definition it will mean that some eigenvalues are non-positive. That means that this point is some kind of saddle point. And we basically don't know, where to move. By regularization we make all the eigenvalues positive, and the method will work as expected.
+
 \subsubsection{Diagonal modification}
 
 \[
     B_k = \nabla^2 f(x_k) + \tau_k I 
 \]
 
-Then: 
+Then (as $Q$ is orthogonal, see previous lecture): 
 \[ 
     Q \lambda Q^T + \tau_k I = Q \lambda Q^T + \tau_k Q Q^T = Q (\lambda + \tau_k I) Q^T
 \]
+
+Like in the previous method, we add some constant to all the eigenvalues. When the constant is large, these eigenvalues will probably become positive. Yet, interpreting all the eigenvalues as really big vallues around infinity is not a good idea as it is interpreted as stretching the space in all the directions with the same magnitude.
 
 Iterations are:
 \[
     x_{k+1} = x_k - \alpha_k (\nabla^2 f(x_k) + \tau_k I)^{-1} \nabla f(x_k)
 \]
 
-If $\tau_k \gg 1$, then the method is close to the gradient descent. If $\tau_k \ll 1$, then the method is close to the Newton method. We use a stable and well-performing method when we can and switch to Newton method when we are close to the minimum.
+If $\tau_k \gg 1$, then the method is close to the gradient descent (as it also doesn't pay attention to the curvature of the space). If $\tau_k \ll 1$, then the method is close to the Newton method. We use a stable and well-performing method when we can and switch to Newton method when we are close to the minimum.
 
 \begin{algorithm}
     \caption{Diagonal modification Newton method}
@@ -304,6 +334,8 @@ If $\tau_k \gg 1$, then the method is close to the gradient descent. If $\tau_k 
     \State $\tau_{k+1} = \tau_k \cdot \rho, \;\; \rho < 1$
 \end{algorithmic}
 \end{algorithm}
+
+Basically we will be making constant smaller and smaller until we find the positive definite matrix. Afterwards we continue with that same constant. And continue to minimize it when Hessian is positive definite and increase it when it is not.
 
 \subsubsection{Modification of LDL decomposition}
 The most fancy one, takes advantage of both previous modifications.

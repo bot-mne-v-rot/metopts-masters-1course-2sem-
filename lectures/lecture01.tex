@@ -180,13 +180,15 @@ Simply saying, the described setup is very basic. We are given the direction in 
 
 There are several conditions for searching for a local minimum of $\varphi(\alpha)$. These conditions give us ranges of $\alpha$ which we will consider while searching for the minimum afterwards.
 
-One of them is the Armijo condition.
+One of them is the Armijo condition. 
 \begin{definition} \textit{Armijo condition}:
 \begin{gather*}
   \varphi(\alpha) \leqslant \varphi(0) + c_1 \alpha \varphi'(0) \\
   c_1 \in (0, 1)
 \end{gather*}
 \end{definition}
+
+Step-size search conditions are well-explained in \href{https://www.math.uci.edu/~qnie/Publications/NumericalOptimization.pdf}{Nocedal \& Wright's book ``Numerical Optimization''}.
 
 Here, we fix the constant before the beginning and keep it during the search algorithm. Also there are weak and strong Wolfe conditions.
 \begin{definition} \textit{Weak Wolfe condition}:

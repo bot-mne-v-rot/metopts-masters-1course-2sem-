@@ -17,9 +17,13 @@ Let's recall what algorithms we have already discussed for minimizing a function
     \end{tabular}
 \end{table}
 
-Where $q$ is probably the time to compute the gradient.
+Where $q$ is probably the time to compute the gradient and $n$ is the dimension of the space.
 
-Now let's introduce the Conjugate Gradient Method (CG). At first, we will consider the quadratic case.
+Here is a good explanation of \href{https://www.cs.cmu.edu/~quake-papers/painless-conjugate-gradient.pdf}{Conjugate Gradient and some other stuff}.
+
+Now let's introduce the Conjugate Gradient Method (CG). Remember basic GD\@? Remember poorly scaled functions? What was the problem? The problem was that the step was not optimal. We were basically going in the same direction on and on. But, agree that when the directions are kind of basis vectors of the space and optimal step is done, we converge in no more than $n$ steps. And this is what the CG method is about. We are going to compute such optimal steps in the directions, which are conjugate to each other. 
+
+At first, we will consider the quadratic case.
 
 The problem we are going to solve is the following:
 \begin{gather*}
@@ -48,9 +52,12 @@ Today we will denote:
     &\Longrightarrow \alpha = - \frac{g_k^T d_k}{d_k^T A d_k}
 \end{align*}
 
-The default GD + this optimal, analytically found step is called the steepest descent method.
+The default GD + this optimal, analytically found step is called the steepest descent method. Steepest descent looks like slicing the function with a plane and analytically finding the minimum of the parabola. Better explained \href{https://gregorygundersen.com/blog/2022/03/20/conjugate-gradient-descent/}{here}.
 
-We can observe an important property of the steepest descent method: each step is orthogonal to the previous one. Conjugate gradient method is a modification of the steepest descent, which optimizes the steps even more. To define the CGD we need to introduce some definitions: 
+
+We can observe an important property of the steepest descent method: each step is orthogonal to the previous one. Conjugate gradient method is a modification of the steepest descent, which optimizes the steps even more. 
+
+To define the CGD we need to introduce some definitions: 
 
 \begin{conj}
     Vectors $u$ and $v$ are called conjugate with respect to matrix $A$ if $u^T A v = 0$.
@@ -86,7 +93,7 @@ If $\{d_i\}^{n-1}_{i=0}$ are conjugate, then $\{d_i\}$ --- basis in $\mathbb{R}^
 \end{gather*}
 Then what is the optimal $\alpha_j$?
 \begin{gather*}
-    \alpha_j = \frac{d_j^T A (x_{opt} - x_0)}{d_j^T A d_j} = \frac{d_j^T (b - A x_0)}{d_j^T A d_j} = - \frac{d_j^T g_0}{d_j^T A d_j}
+    \alpha_j = \frac{d_j^T A (x_{opt} - x_0)}{d_j^T A d_j} = \frac{d_j^T (b - A x_0)}{d_j^T A d_j} = - \frac{d_j^T g_j}{d_j^T A d_j}
 \end{gather*}
 
 So using such conjugate directions we can find the optimal step $\alpha_j$, which looks really similar to the one, which we have found analytically. Actually, they are equal. Let's check that. 
@@ -145,6 +152,8 @@ We got a diagonalization to a linear form.
 
 Now let's find out how to find the conjugate directions.
 
+Basically we use ala Gram-Schmidt orthogonalization process, every next direction is orthogonal to the previous ones.
+
 \begin{align*}
     &z_0, z_1, \ldots, z_{n-1} \sim \mathcal{N} \\ 
     &d_0 = z_0 \\ 
@@ -154,15 +163,16 @@ Now let's find out how to find the conjugate directions.
     &d_k = z_k - \sum^{n-2}_{i=0} \operatorname{proj}_{d_i} z_{n - 1}
 \end{align*}
 
-We can compute the conjugate directions using the following algorithm:
+This leads us we the following iterative procedure:
 \begin{gather*}
     \begin{cases}
         d_0 = -g_0 \\ 
         d_{k+1} = -g_{k+1} + \beta_k d_k
     \end{cases}
 \end{gather*}
+Here $d_k$ is the direction in which we are moving. As seen, $d_0$ is as usual just a negative gradient. Afterwards, for every $d_{k+1}$ we take negative gradient and subtract the projection of the gradient on all the previous directions. 
 
-Then: 
+We can analytically compute $\beta_k$ which is going to be the projection of the gradient on the previous direction:
 \begin{align*}
     0 &= d^T_{k+1} A d_k \\ 
     &= (-g_{k+1} + \beta_k d_k)^T A d_k \\ 
